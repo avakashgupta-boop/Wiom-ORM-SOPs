@@ -2499,15 +2499,120 @@ function renderScriptsPane(){
   return html;
 }
 
-function filterScripts(){
-  const q = document.getElementById('script-search')?.value.toLowerCase()||'';
-  document.querySelectorAll('.script-card').forEach(card=>{
-    card.style.display = (!q||card.dataset.text.includes(q)) ? '' : 'none';
+/* Synonym map — customer words → script keywords */
+const SCRIPT_SYNONYMS = {
+  // plan / pricing
+  'plan':        ['recharge','pricing','amount','options','vikalp','rupaye','kitna','fixed','monthly'],
+  'plans':       ['recharge','pricing','amount','options','vikalp'],
+  'price':       ['amount','kitna','rupaye','recharge','rs','₹','pricing','cost'],
+  'pricing':     ['amount','kitna','rupaye','recharge','rs','₹','cost'],
+  'amount':      ['kitna','rupaye','recharge','rs','₹','pricing','cost','price'],
+  'cost':        ['kitna','rupaye','amount','recharge','rs','₹'],
+  'kitna':       ['amount','price','rupaye','recharge','cost','rs','₹'],
+  'kitne':       ['amount','price','rupaye','recharge','cost','rs','₹'],
+  'monthly':     ['recharge','fixed','mahine','monthly fixed','plan'],
+  'mahine':      ['monthly','recharge','fixed','plan','amount'],
+  // speed / devices
+  'speed':       ['mbps','fast','network','kitni','bandwidth','80','100'],
+  'fast':        ['speed','mbps','network','bandwidth'],
+  'slow':        ['speed','mbps','network','bandwidth'],
+  'mbps':        ['speed','network','bandwidth'],
+  'device':      ['mobile','laptop','tv','connect','devices','8','12'],
+  'devices':     ['mobile','laptop','tv','connect','8','12'],
+  // booking / install
+  'book':        ['booking','app','register','karna','process'],
+  'booking':     ['app','register','karna','process','100','fees'],
+  'install':     ['lagana','installation','engineer','setup','net lagana','2','3','din'],
+  'installation':['lagana','engineer','setup','net lagana','2','3','din'],
+  'lagana':      ['installation','engineer','setup','net lagana'],
+  'setup':       ['installation','lagana','engineer','net lagana'],
+  'engineer':    ['installation','lagana','setup','technician','visit'],
+  'technician':  ['engineer','installation','lagana','setup'],
+  // refund / cancel
+  'refund':      ['wapas','cancel','return','14','din','auto','booking'],
+  'cancel':      ['refund','band','wapas','cancellation','14','din'],
+  'wapas':       ['refund','cancel','return','300','100'],
+  'cancellation':['cancel','refund','band','wapas'],
+  // app
+  'app':         ['wiom app','download','application','mobile'],
+  'download':    ['app','wiom app','application'],
+  // deposit / fees
+  'deposit':     ['300','security','refundable','netbox'],
+  'security':    ['deposit','300','refundable','netbox'],
+  'fees':        ['100','booking','amount','charge'],
+  'fee':         ['100','booking','amount','charge'],
+  '300':         ['deposit','security','refundable','netbox'],
+  '100':         ['booking','fees','amount','charge'],
+  // range / area
+  'range':       ['coverage','area','floor','ghar','diwaar'],
+  'coverage':    ['range','area','floor','ghar'],
+  'area':        ['range','coverage','non-serviceable','serviceable'],
+  // recharge
+  'recharge':    ['plan','balance','din','days','amount','options','vikalp'],
+  // complaint / problem
+  'problem':     ['complaint','issue','nahi','band','error','kaam nahi'],
+  'issue':       ['complaint','problem','nahi','band','error'],
+  'complaint':   ['problem','issue','nahi','band','error'],
+  // OTT / other
+  'ott':         ['bundle','streaming','netflix','youtube','out of scope'],
+  'netflix':     ['ott','bundle','streaming','youtube'],
+  'youtube':     ['ott','bundle','streaming','netflix'],
+  // delay
+  'delay':       ['late','14','din','koi nahi','aaya nahi','wait','intezaar'],
+  'late':        ['delay','14','din','koi nahi','aaya nahi'],
+  // iphone
+  'iphone':      ['ios','apple','app','unavailable'],
+};
+
+function expandQuery(raw){
+  const tokens = raw.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const expanded = new Set(tokens);
+  tokens.forEach(t=>{
+    (SCRIPT_SYNONYMS[t]||[]).forEach(s=>expanded.add(s));
+    // also try partial: if token length >= 4, add it as substring
   });
+  return [...expanded];
+}
+
+function scoreCard(cardText, terms){
+  return terms.filter(t => cardText.includes(t)).length;
+}
+
+function filterScripts(){
+  const raw = document.getElementById('script-search')?.value||'';
+  const terms = expandQuery(raw);
+  const hasQuery = raw.trim().length > 0;
+
+  let anyResult = false;
+  document.querySelectorAll('.script-card').forEach(card=>{
+    if(!hasQuery){ card.style.display=''; return; }
+    const score = scoreCard(card.dataset.text, terms);
+    card.style.display = score > 0 ? '' : 'none';
+    if(score>0) anyResult = true;
+  });
+
   document.querySelectorAll('.script-group').forEach(grp=>{
     const vis = [...grp.querySelectorAll('.script-card')].some(c=>c.style.display!=='none');
     grp.style.display = vis ? '' : 'none';
   });
+
+  // Show "no results" hint with what was searched
+  let hint = document.getElementById('script-no-results');
+  if(!hint){
+    hint = document.createElement('div');
+    hint.id = 'script-no-results';
+    hint.style.cssText = 'padding:16px;text-align:center;color:var(--text3);font-size:13px;display:none';
+    document.getElementById('scripts-list')?.after(hint);
+  }
+  if(hasQuery && !anyResult){
+    const expanded = terms.filter(t=>!raw.toLowerCase().includes(t));
+    hint.innerHTML = `<i class="ti ti-search-off" style="font-size:24px;display:block;margin-bottom:6px"></i>
+      No scripts found for <strong>"${esc(raw)}"</strong><br>
+      <span style="font-size:12px">Also searched: ${expanded.slice(0,6).map(t=>`<em>${esc(t)}</em>`).join(', ')}</span>`;
+    hint.style.display='';
+  } else {
+    hint.style.display='none';
+  }
 }
 
 /* ───── INIT ───── */
