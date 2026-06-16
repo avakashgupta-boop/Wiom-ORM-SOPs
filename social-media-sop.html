@@ -810,8 +810,15 @@ Kripya humein apna order number ya registered number DM karein — hum aapki sam
     <!-- Sidebar -->
     <div class="mgr-sidebar">
       <div class="mgr-panel">
-        <div class="mgr-panel-title"><i class="ti ti-file-text"></i>SOP sections</div>
-        <div class="sec-list" id="mgr-sec-list"></div>
+        <div class="mgr-panel-title"><i class="ti ti-layout-grid"></i>Agent view tabs</div>
+        <div class="sec-list">
+          <div class="sec-item" id="msi-flow"      onclick="loadMgrTab('flow')"><i class="ti ti-list-check"></i>Ticket flow (12 steps)</div>
+          <div class="sec-item" id="msi-sentiment" onclick="loadMgrTab('sentiment')"><i class="ti ti-mood-smile"></i>Response guide</div>
+          <div class="sec-item" id="msi-templates" onclick="loadMgrTab('templates')"><i class="ti ti-message"></i>Templates</div>
+          <div class="sec-item" id="msi-moderation"onclick="loadMgrTab('moderation')"><i class="ti ti-shield-check"></i>Moderation rules</div>
+          <div class="sec-item" id="msi-escalation"onclick="loadMgrTab('escalation')"><i class="ti ti-alert-triangle"></i>Escalation matrix</div>
+          <div class="sec-item" id="msi-shift"     onclick="loadMgrTab('shift')"><i class="ti ti-clock"></i>Shift duties</div>
+        </div>
       </div>
       <div class="mgr-panel">
         <div class="mgr-panel-title"><i class="ti ti-adjustments"></i>SLA targets</div>
@@ -1090,6 +1097,58 @@ function getData(){
   return d;
 }
 
+/* ───── STRUCTURED CONTENT STORAGE ───── */
+const CONTENT_KEY = 'wiom_orm_content_v1';
+
+const DEFAULT_CONTENT = {
+  steps: [
+    {n:1, title:'Monitor & Triage', sub:'Continuously monitor Konnect. Priority: Negative/Urgent > Neutral > Positive. Gmail from management = top priority.', status:'New / Unassigned', color:'b-red'},
+    {n:2, title:'Categorise & Tag', sub:'Apply/verify Sentiment using Konnect\'s analysis. Categorise each mention with correct classification.', status:'Open / Assigned', color:'b-amber'},
+    {n:3, title:'Kapture Ticket', sub:'Search for existing ticket. Create new if none. Reopen if incorrectly closed. Update notes if already open.', status:'Open / Assigned', color:'b-amber'},
+    {n:4, title:'First Response (FRT)', sub:'__FRT_STEP__', status:'WIP / Follow-only', color:'b-blue', highlight:true},
+    {n:5, title:'Complaint Handling', sub:'Details available: call customer, coordinate internally. Details NOT available: DM for details or share form link.', status:'Pending Info', color:'b-amber'},
+    {n:6, title:'Resolution & Follow-up', sub:'Follow up with final solution on social channel after internal resolution is complete. TAT: 48 hours.', status:'Resolved', color:'b-green'},
+    {n:7, title:'Final Closure', sub:'Close only when issue is fully solved. Last reply on customer comment must be from our team.', status:'Closed', color:'b-teal'},
+    {n:8, title:'Notes in KI', sub:'Add Kapture ticket number + date of creation in KI notes section.', status:'Notes', color:'b-purple'},
+    {n:9, title:'Comment Moderation', sub:'Review public comments. Apply hide/delete rules. Do NOT delete genuine criticism.', status:'Comment Hidden', color:'b-red'},
+    {n:10, title:'Reopen Rule', sub:'Customer replies → reopen. Thank-you reply → close. Dissatisfaction → address within 24h then close.', status:'Reopened', color:'b-amber'},
+    {n:11, title:'Irrelevant Identification', sub:'Spam, non-Wiom text, auto emails, unrelated images → mark as Irrelevant Ticket.', status:'Irrelevant', color:'b-red'},
+    {n:12, title:'User Input in KI', sub:'Fill contact details, real name, and Kapture ticket ID in the KI ticket fields.', status:'—', color:'b-blue'},
+  ],
+  sentiments: [
+    {cls:'sent-neg', icon:'ti-mood-sad', label:'Negative (Complaint)', tone:'Empathetic, Apologetic, Solution-oriented. Avoid defensive language.', types:'Service issue, Partner complaint, App failure', actions:'Acknowledge frustration, apologise, request private details, assure follow-up within 24h.', ki:'Reply and Work in Progress'},
+    {cls:'sent-neu', icon:'ti-mood-neutral', label:'Neutral (Query/Request)', tone:'Informative, Friendly, Helpful. Concise and factual.', types:'Generic comment, plan enquiry, invoice request', actions:'Address the query directly and invite further questions.', ki:'Reply and Follow-up'},
+    {cls:'sent-pos', icon:'ti-mood-happy', label:'Positive (Praise/Thanks)', tone:'Warm, Appreciative, Enthusiastic. Show gratitude.', types:'Service and support-related positive feedback', actions:'Thank the user, reinforce the positive, encourage continued engagement.', ki:'Reply and Resolved'},
+  ],
+  templates: {
+    email: `Dear Customer,\n\nAapka message humein mil gaya hai. Chinta na karein, hamari support team ispar abhi kaam kar rahi hai. Hum 24 ghante ke andar aapse sampark karenge.\n\nYadi aapne apna registered mobile number share nahi kiya hai, kripya reply mein bhej dein. Isse aapki request aur jaldi solve ho payegi.\n\nAapke patience aur understanding ke liye dhanyavaad.\n\nWarm regards,\nWiom Support Team`,
+    social: `Dear Customer,\n\nHum maafi chahte hain ki aapko samasya face karni padi. Yadi aapki samasya abhi tak solve nahi hui hai, toh kripya reply mein detail bhejein ya yeh form fill karein:\nhttps://forms.gle/issrEbX24r6BLaj69\n\nIsse humein aapki request ko tezi se resolve karne mein madad milegi.\n\nDhanyavaad aapke dhairya ke liye.\nWiom Support Team`,
+    pvt: `Kripya humein apna order number ya registered number DM karein — hum aapki samasya jaldi solve kar paayenge. 🙏`
+  },
+  moderation: [
+    {action:'Hide / Delete', badge:'b-red', icon:'ti-eye-off', when:'Spam ads, abusive or obscene content, off-topic trolling, community standards violation.', mark:'"Invalid/Spam" or "Community Guidelines Violation"'},
+    {action:'Hide ONLY', badge:'b-amber', icon:'ti-eye-off', when:'User accidentally posts personal data (e.g. phone number). DM the user after hiding.', mark:'Tag as "Hidden" + note why'},
+    {action:'Do NOT Delete', badge:'b-green', icon:'ti-check', when:'Honest criticism or legitimate service queries. Respond per Negative Sentiment guidelines.', mark:'Respond, update status'},
+    {action:'Audit note', badge:'b-blue', icon:'ti-notes', when:'Any hidden/deleted comment — always.', mark:'Add a KI note explaining why it was removed.'},
+  ],
+  escalation: {
+    l1: {triggers:'FRT/TAT targets missed, unable to collect necessary customer details, high-volume or sentiment spike.', action:'Immediate supervisor notification + internal mail tags. Notify in Slack channel Cx_all.'},
+    l2: {triggers:'Major brand crisis, severe reputation risk, legal/safety issue, system downtime impacting SLAs.', action:'Alert L2 immediately via internal tag or email. Use subject line: "Critical".'},
+    sla: ['Flag the ticket as overdue in Konnect Insight.','Notify supervisor immediately — do not wait till end of shift.','Add an internal note with reason for delay.','If >30 min without FRT → escalate to L1.','If >48 hrs without resolution → escalate to L2 and document.']
+  },
+  shift: {
+    start: [{title:'Log into all systems', sub:'KI, WIOM HUB, Ameyo, Slack, Gmail'},{title:'Review overnight tickets', sub:'Check SLA deadlines — prioritise urgent, escalated, or aging tickets first.'},{title:'Acknowledge any missed FRTs', sub:'Send pending first responses before anything else.'}],
+    end: [{title:'Update all open tickets', sub:'Ensure every open ticket has a current status and notes.'},{title:'Reset queue', sub:'Use "Reset my queue" in KI to hand off to next shift.'},{title:'Share EOD report in Slack', sub:'Post summary in Cx_all — tickets received / resolved / escalated + high-priority ongoing issues.'}]
+  }
+};
+
+function getContent(){
+  const stored = localStorage.getItem(CONTENT_KEY);
+  if(!stored) return JSON.parse(JSON.stringify(DEFAULT_CONTENT));
+  try { return JSON.parse(stored); } catch(e){ return JSON.parse(JSON.stringify(DEFAULT_CONTENT)); }
+}
+function saveContent(c){ localStorage.setItem(CONTENT_KEY, JSON.stringify(c)); }
+
 function toast(msg,type){ toast2(msg,type||'ok'); }
 
 /* ───── AUTH ───── */
@@ -1298,7 +1357,8 @@ function switchSec(id){
 /* ───── RENDER FLOW ───── */
 function renderFlow(){
   const cfg = loadConfig();
-  document.getElementById('flow-steps').innerHTML = FLOW_STEPS.map(s=>`
+  const steps = getContent().steps;
+  document.getElementById('flow-steps').innerHTML = steps.map(s=>`
     <li class="step" style="${s.highlight?'border-color:var(--amber);background:var(--amber-bg)':''}">
       <div class="step-num" style="${s.highlight?'background:var(--amber-bg);color:var(--amber-text)':''}">${s.n}</div>
       <div class="step-body">
@@ -1312,6 +1372,7 @@ function renderFlow(){
 
 /* ───── RENDER SENTIMENT ───── */
 function renderSentiment(){
+  const SENTIMENTS = getContent().sentiments;
   document.getElementById('sent-grid').innerHTML = SENTIMENTS.map(s=>`
     <div class="sent-card ${s.cls}">
       <div class="sent-title"><i class="ti ${s.icon}" style="font-size:17px"></i>${s.label}</div>
@@ -1327,6 +1388,7 @@ function renderSentiment(){
 
 /* ───── RENDER PLATFORMS ───── */
 function renderPlatforms(){
+  const PLATFORMS = getContent().platforms || DEFAULT_CONTENT.platforms||[{icon:'ti-brand-facebook',name:'Facebook',detail:'DMs, comments, hashtags',type:'Social Media'},{icon:'ti-brand-instagram',name:'Instagram',detail:'DMs, comments, hashtags',type:'Social Media'},{icon:'ti-brand-x',name:'Twitter (X)',detail:'Mentions, DMs, hashtags',type:'Social Media'},{icon:'ti-brand-linkedin',name:'LinkedIn',detail:'Mentions, comments',type:'Social Media'},{icon:'ti-brand-youtube',name:'YouTube',detail:'Comments, mentions',type:'Social Media'},{icon:'ti-star',name:'Google Reviews',detail:'Ratings & reviews',type:'Review Platform'},{icon:'ti-device-mobile',name:'Play Store',detail:'App ratings & reviews',type:'Review Platform'},{icon:'ti-mail',name:'Gmail',detail:'Email integration — fetched as tickets',type:'Direct Channel'}];
   document.getElementById('platforms-list').innerHTML = PLATFORMS.map(p=>`
     <div class="platform-row">
       <i class="ti ${p.icon}" aria-hidden="true"></i>
@@ -1385,14 +1447,234 @@ function copyTmpl(id){
 let activeSecId=null;
 
 function renderManager(){
-  const d=getData();
-  const list=document.getElementById('mgr-sec-list');
-  list.innerHTML=d.sections.map(s=>`
-    <div class="sec-item${activeSecId===s.id?' active':''}" onclick="loadSection('${s.id}')">
-      <i class="ti ${s.icon}"></i>${s.title}
-    </div>
-  `).join('');
-  if(activeSecId) loadSection(activeSecId,true);
+  if(activeMgrTab) loadMgrTab(activeMgrTab, true);
+}
+
+/* ── Tab editor dispatcher ── */
+let activeMgrTab = null;
+
+function loadMgrTab(tab, silent){
+  activeMgrTab = tab;
+  document.querySelectorAll('[id^="msi-"]').forEach(el=>el.classList.toggle('active', el.id==='msi-'+tab));
+  const pane = document.getElementById('edit-body-area');
+  const titleEl = document.getElementById('edit-title');
+  const c = getContent();
+
+  if(tab==='flow'){
+    titleEl.textContent='Ticket flow — 12 steps';
+    pane.innerHTML = c.steps.map((s,i)=>`
+      <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px;background:var(--surface2)">
+        <div style="font-size:12px;font-weight:500;color:var(--text3);margin-bottom:8px">Step ${s.n}</div>
+        <label style="font-size:12px">Title</label>
+        <input type="text" id="step-title-${i}" value="${esc(s.title)}" style="font-size:13px;padding:6px 10px;margin-bottom:6px">
+        <label style="font-size:12px">Description</label>
+        <textarea id="step-sub-${i}" rows="2" style="font-size:13px;padding:6px 10px;min-height:56px">${esc(s.sub==='__FRT_STEP__'?'Send initial public reply or DM within the FRT target. Use Hinglish templates — always personalise.':s.sub)}</textarea>
+        <label style="font-size:12px">Status badge</label>
+        <input type="text" id="step-status-${i}" value="${esc(s.status)}" style="font-size:13px;padding:6px 10px">
+      </div>`).join('')+
+      `<div class="form-actions"><button class="btn btn-primary" onclick="saveSteps()"><i class="ti ti-device-floppy"></i> Save all steps</button></div>`;
+  }
+
+  else if(tab==='sentiment'){
+    titleEl.textContent='Response guide — sentiment cards';
+    const icons = ['ti-mood-sad','ti-mood-neutral','ti-mood-happy'];
+    pane.innerHTML = c.sentiments.map((s,i)=>`
+      <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px;background:var(--surface2)">
+        <div style="font-size:13px;font-weight:500;margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="ti ${icons[i]}" style="font-size:16px"></i>${esc(s.label)}</div>
+        <label style="font-size:12px">Tone guideline</label>
+        <input type="text" id="sent-tone-${i}" value="${esc(s.tone)}" style="font-size:13px;padding:6px 10px;margin-bottom:6px">
+        <label style="font-size:12px">Issue types</label>
+        <input type="text" id="sent-types-${i}" value="${esc(s.types)}" style="font-size:13px;padding:6px 10px;margin-bottom:6px">
+        <label style="font-size:12px">Mandatory actions</label>
+        <textarea id="sent-actions-${i}" rows="2" style="font-size:13px;padding:6px 10px;min-height:56px">${esc(s.actions)}</textarea>
+        <label style="font-size:12px">KI action</label>
+        <input type="text" id="sent-ki-${i}" value="${esc(s.ki)}" style="font-size:13px;padding:6px 10px">
+      </div>`).join('')+
+      `<div class="form-actions"><button class="btn btn-primary" onclick="saveSentiments()"><i class="ti ti-device-floppy"></i> Save response guide</button></div>`;
+  }
+
+  else if(tab==='templates'){
+    titleEl.textContent='Templates';
+    const t = c.templates;
+    pane.innerHTML=`
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:6px"><i class="ti ti-mail" style="font-size:15px;color:var(--blue)"></i>Off-hour auto-reply — Email</div>
+      <textarea id="tmpl-e" rows="8" style="font-size:13px;padding:8px 10px;margin-bottom:12px">${esc(t.email)}</textarea>
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:6px"><i class="ti ti-brand-instagram" style="font-size:15px;color:var(--purple)"></i>Off-hour auto-reply — Instagram / Facebook</div>
+      <textarea id="tmpl-s" rows="7" style="font-size:13px;padding:8px 10px;margin-bottom:12px">${esc(t.social)}</textarea>
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:6px;display:flex;align-items:center;gap:6px"><i class="ti ti-message-dots" style="font-size:15px;color:var(--teal)"></i>Request private details (public reply)</div>
+      <textarea id="tmpl-p" rows="2" style="font-size:13px;padding:8px 10px;margin-bottom:12px">${esc(t.pvt)}</textarea>
+      <div class="form-actions"><button class="btn btn-primary" onclick="saveTemplates()"><i class="ti ti-device-floppy"></i> Save templates</button></div>`;
+  }
+
+  else if(tab==='moderation'){
+    titleEl.textContent='Moderation rules';
+    pane.innerHTML = c.moderation.map((r,i)=>`
+      <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px;background:var(--surface2)">
+        <div style="font-size:13px;font-weight:500;margin-bottom:8px"><span class="badge ${r.badge}">${esc(r.action)}</span></div>
+        <label style="font-size:12px">When to apply</label>
+        <textarea id="mod-when-${i}" rows="2" style="font-size:13px;padding:6px 10px;min-height:52px;margin-bottom:6px">${esc(r.when)}</textarea>
+        <label style="font-size:12px">Mark in Konnect</label>
+        <input type="text" id="mod-mark-${i}" value="${esc(r.mark)}" style="font-size:13px;padding:6px 10px">
+      </div>`).join('')+
+      `<div class="form-actions"><button class="btn btn-primary" onclick="saveModeration()"><i class="ti ti-device-floppy"></i> Save moderation rules</button></div>`;
+  }
+
+  else if(tab==='escalation'){
+    titleEl.textContent='Escalation matrix';
+    const e = c.escalation;
+    pane.innerHTML=`
+      <div style="border-left:3px solid var(--amber);background:var(--amber-bg);border-radius:var(--r);padding:12px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:500;color:var(--amber-text);margin-bottom:8px">L1 — Immediate Supervisor / Manager</div>
+        <label style="font-size:12px">Triggers</label>
+        <textarea id="esc-l1-triggers" rows="2" style="font-size:13px;padding:6px 10px;min-height:52px;margin-bottom:6px">${esc(e.l1.triggers)}</textarea>
+        <label style="font-size:12px">Action</label>
+        <textarea id="esc-l1-action" rows="2" style="font-size:13px;padding:6px 10px;min-height:52px">${esc(e.l1.action)}</textarea>
+      </div>
+      <div style="border-left:3px solid var(--red);background:var(--red-bg);border-radius:var(--r);padding:12px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:500;color:var(--red-text);margin-bottom:8px">L2 — Director / Head</div>
+        <label style="font-size:12px">Triggers</label>
+        <textarea id="esc-l2-triggers" rows="2" style="font-size:13px;padding:6px 10px;min-height:52px;margin-bottom:6px">${esc(e.l2.triggers)}</textarea>
+        <label style="font-size:12px">Action</label>
+        <textarea id="esc-l2-action" rows="2" style="font-size:13px;padding:6px 10px;min-height:52px">${esc(e.l2.action)}</textarea>
+      </div>
+      <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px;background:var(--surface2)">
+        <div style="font-size:13px;font-weight:500;margin-bottom:8px;color:var(--text2)">Violated SLA steps</div>
+        ${e.sla.map((step,i)=>`
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
+            <div style="width:20px;height:20px;border-radius:50%;background:var(--red-bg);color:var(--red-text);font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+            <input type="text" id="sla-step-${i}" value="${esc(step)}" style="font-size:13px;padding:5px 10px;flex:1">
+          </div>`).join('')}
+      </div>
+      <div class="form-actions"><button class="btn btn-primary" onclick="saveEscalation()"><i class="ti ti-device-floppy"></i> Save escalation matrix</button></div>`;
+  }
+
+  else if(tab==='shift'){
+    titleEl.textContent='Shift duties';
+    const sh = c.shift;
+    const renderShiftSteps = (steps, prefix) => steps.map((s,i)=>`
+      <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
+        <div style="width:22px;height:22px;border-radius:50%;background:var(--blue-bg);color:var(--blue-text);font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:6px">${i+1}</div>
+        <div style="flex:1">
+          <input type="text" id="${prefix}-title-${i}" value="${esc(s.title)}" placeholder="Title" style="font-size:13px;padding:5px 10px;margin-bottom:4px">
+          <input type="text" id="${prefix}-sub-${i}" value="${esc(s.sub)}" placeholder="Description" style="font-size:13px;padding:5px 10px">
+        </div>
+      </div>`).join('');
+    pane.innerHTML=`
+      <div style="font-size:14px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:6px;color:var(--amber-text)"><i class="ti ti-sun" style="font-size:16px"></i>Start of shift</div>
+      <div id="shift-start-list">${renderShiftSteps(sh.start,'ss')}</div>
+      <div class="divider"></div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:6px;color:var(--blue-text)"><i class="ti ti-moon" style="font-size:16px"></i>End of shift</div>
+      <div id="shift-end-list">${renderShiftSteps(sh.end,'se')}</div>
+      <div class="form-actions" style="margin-top:1rem"><button class="btn btn-primary" onclick="saveShift(${sh.start.length},${sh.end.length})"><i class="ti ti-device-floppy"></i> Save shift duties</button></div>`;
+  }
+}
+
+/* ── Save functions for each structured editor ── */
+function saveSteps(){
+  const c = getContent();
+  c.steps.forEach((s,i)=>{
+    s.title  = document.getElementById(`step-title-${i}`)?.value || s.title;
+    const rawSub = document.getElementById(`step-sub-${i}`)?.value || '';
+    s.sub    = s.highlight ? '__FRT_STEP__' : rawSub;
+    if(!s.highlight) s.sub = rawSub;
+    s.status = document.getElementById(`step-status-${i}`)?.value || s.status;
+  });
+  saveContent(c); renderFlow(); toast('Ticket flow saved');
+}
+
+function saveSentiments(){
+  const c = getContent();
+  c.sentiments.forEach((s,i)=>{
+    s.tone    = document.getElementById(`sent-tone-${i}`)?.value    || s.tone;
+    s.types   = document.getElementById(`sent-types-${i}`)?.value   || s.types;
+    s.actions = document.getElementById(`sent-actions-${i}`)?.value || s.actions;
+    s.ki      = document.getElementById(`sent-ki-${i}`)?.value      || s.ki;
+  });
+  saveContent(c); renderSentiment(); toast('Response guide saved');
+}
+
+function saveTemplates(){
+  const c = getContent();
+  c.templates.email  = document.getElementById('tmpl-e')?.value || c.templates.email;
+  c.templates.social = document.getElementById('tmpl-s')?.value || c.templates.social;
+  c.templates.pvt    = document.getElementById('tmpl-p')?.value || c.templates.pvt;
+  saveContent(c); renderAgentTemplates(); toast('Templates saved');
+}
+
+function saveModeration(){
+  const c = getContent();
+  c.moderation.forEach((r,i)=>{
+    r.when = document.getElementById(`mod-when-${i}`)?.value || r.when;
+    r.mark = document.getElementById(`mod-mark-${i}`)?.value || r.mark;
+  });
+  saveContent(c); renderModerationTable(); toast('Moderation rules saved');
+}
+
+function saveEscalation(){
+  const c = getContent();
+  c.escalation.l1.triggers = document.getElementById('esc-l1-triggers')?.value || c.escalation.l1.triggers;
+  c.escalation.l1.action   = document.getElementById('esc-l1-action')?.value   || c.escalation.l1.action;
+  c.escalation.l2.triggers = document.getElementById('esc-l2-triggers')?.value || c.escalation.l2.triggers;
+  c.escalation.l2.action   = document.getElementById('esc-l2-action')?.value   || c.escalation.l2.action;
+  c.escalation.sla = c.escalation.sla.map((_,i)=> document.getElementById(`sla-step-${i}`)?.value || _);
+  saveContent(c); renderEscalationCards(); toast('Escalation matrix saved');
+}
+
+function saveShift(sLen, eLen){
+  const c = getContent();
+  c.shift.start = Array.from({length:sLen},(_,i)=>({
+    title: document.getElementById(`ss-title-${i}`)?.value || c.shift.start[i]?.title,
+    sub:   document.getElementById(`ss-sub-${i}`)?.value   || c.shift.start[i]?.sub
+  }));
+  c.shift.end = Array.from({length:eLen},(_,i)=>({
+    title: document.getElementById(`se-title-${i}`)?.value || c.shift.end[i]?.title,
+    sub:   document.getElementById(`se-sub-${i}`)?.value   || c.shift.end[i]?.sub
+  }));
+  saveContent(c); renderShiftDuties(); toast('Shift duties saved');
+}
+
+/* ── Re-render individual agent sections after manager saves ── */
+function renderAgentTemplates(){
+  const t = getContent().templates;
+  const toHtml = str => esc(str).replace(/\n/g,'<br>');
+  const eb = document.getElementById('tmpl-email');
+  const sb = document.getElementById('tmpl-social');
+  const pb = document.getElementById('tmpl-pvt');
+  if(eb){ const btn=eb.querySelector('.copy-btn'); eb.innerHTML=toHtml(t.email); if(btn)eb.appendChild(btn); }
+  if(sb){ const btn=sb.querySelector('.copy-btn'); sb.innerHTML=toHtml(t.social); if(btn)sb.appendChild(btn); }
+  if(pb){ const btn=pb.querySelector('.copy-btn'); pb.innerHTML=toHtml(t.pvt);   if(btn)pb.appendChild(btn); }
+}
+
+function renderModerationTable(){
+  const rows = getContent().moderation;
+  const tbody = document.querySelector('#sec-moderation .sop-table tbody');
+  if(!tbody) return;
+  tbody.innerHTML = rows.map(r=>`
+    <tr>
+      <td><span class="badge ${r.badge}"><i class="ti ${r.icon}" style="font-size:11px"></i> ${esc(r.action)}</span></td>
+      <td>${esc(r.when)}</td>
+      <td>${esc(r.mark)}</td>
+    </tr>`).join('');
+}
+
+function renderEscalationCards(){
+  const e = getContent().escalation;
+  const el1 = document.querySelector('.esc-card.esc-l1 .esc-body');
+  const el2 = document.querySelector('.esc-card.esc-l2 .esc-body');
+  const esla = document.querySelector('#sec-escalation ol');
+  if(el1) el1.innerHTML=`<strong>Triggers:</strong> ${esc(e.l1.triggers)}<br><strong>Action:</strong> ${esc(e.l1.action)}`;
+  if(el2) el2.innerHTML=`<strong>Triggers:</strong> ${esc(e.l2.triggers)}<br><strong>Action:</strong> ${esc(e.l2.action)}`;
+  if(esla) esla.innerHTML=e.sla.map(s=>`<li>${esc(s)}</li>`).join('');
+}
+
+function renderShiftDuties(){
+  const sh = getContent().shift;
+  const makeHtml = steps => steps.map((s,i)=>`
+    <li class="step"><div class="step-num">${i+1}</div><div class="step-body"><div class="step-title">${esc(s.title)}</div><div class="step-sub">${esc(s.sub)}</div></div></li>`).join('');
+  const startEl = document.querySelector('#sec-shift .grid2 > div:first-child ul.steps');
+  const endEl   = document.querySelector('#sec-shift .grid2 > div:last-child ul.steps');
+  if(startEl) startEl.innerHTML = makeHtml(sh.start);
+  if(endEl)   endEl.innerHTML   = makeHtml(sh.end);
 }
 
 function loadSection(id,keepFocus){
@@ -1719,6 +2001,10 @@ renderFlow();
 renderSentiment();
 renderPlatforms();
 renderCustomTemplates();
+renderModerationTable();
+renderEscalationCards();
+renderShiftDuties();
+renderAgentTemplates();
 </script>
 </body>
 </html>
