@@ -215,6 +215,31 @@ textarea{resize:vertical;line-height:1.7;min-height:120px}
 .info-row{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--text2);margin-bottom:6px}
 .info-row i{font-size:15px;color:var(--text3);margin-top:1px}
 .pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+
+/* SEARCH */
+.search-wrap{position:relative;margin-bottom:1rem}
+.search-input-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1.5px solid var(--border2);border-radius:var(--rl);padding:10px 14px;transition:border-color .15s}
+.search-input-row:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
+.search-input-row i{font-size:20px;color:var(--text3);flex-shrink:0}
+.search-input-row input{flex:1;border:none;background:none;font-size:15px;color:var(--text);outline:none;font-family:inherit}
+.search-input-row input::placeholder{color:var(--text3)}
+.search-clear{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:2px;display:none}
+.search-clear.show{display:block}
+.search-clear:hover{color:var(--text)}
+.search-results{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--rl);z-index:150;display:none;max-height:480px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.12)}
+.search-results.open{display:block}
+.search-group-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;padding:10px 14px 4px}
+.search-item{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;cursor:pointer;transition:background .12s;border-bottom:0.5px solid var(--border)}
+.search-item:last-child{border-bottom:none}
+.search-item:hover{background:var(--surface2)}
+.search-item-icon{width:32px;height:32px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.search-item-body{flex:1;min-width:0}
+.search-item-title{font-size:14px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-item-snippet{font-size:12px;color:var(--text2);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.search-item-tab{font-size:11px;color:var(--text3);margin-top:3px;display:flex;align-items:center;gap:3px}
+.search-highlight{background:var(--amber-bg);color:var(--amber-text);border-radius:2px;padding:0 2px;font-weight:500}
+.search-empty{padding:2rem 1rem;text-align:center;color:var(--text3);font-size:14px}
+.search-empty i{font-size:32px;display:block;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -339,6 +364,16 @@ textarea{resize:vertical;line-height:1.7;min-height:120px}
 
 <!-- ═══════════ AGENT VIEW ═══════════ -->
 <div id="agent-view" class="active">
+
+  <!-- SEARCH BAR -->
+  <div class="search-wrap" id="search-wrap">
+    <div class="search-input-row">
+      <i class="ti ti-search" aria-hidden="true"></i>
+      <input type="text" id="sop-search" placeholder="Search SOPs… e.g. 'angry customer', 'close ticket', 'FRT', 'hide comment'" autocomplete="off" oninput="onSearch(this.value)" onkeydown="onSearchKey(event)">
+      <button class="search-clear" id="search-clear" onclick="clearSearch()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
 
   <div class="sec-tabs">
     <button class="sec-tab" onclick="switchSec('overview')"><i class="ti ti-home"></i>Overview</button>
@@ -1481,6 +1516,200 @@ function renderOverviewStats(){
   if(tat) tat.textContent = c.tat;
   if(hrs) hrs.textContent = c.hours;
 }
+
+/* ───── SMART SEARCH ───── */
+
+// Full search index — every item has: title, snippet, tab, icon, iconBg, keywords[]
+const SEARCH_INDEX = [
+  // ── TICKET FLOW ──
+  {title:'Monitor & Triage', snippet:'Continuously monitor Konnect. Priority: Negative/Urgent > Neutral > Positive. Gmail from management = top priority.', tab:'flow', icon:'ti-list-check', bg:'var(--blue-bg)', color:'var(--blue-text)', keywords:['monitor','triage','dashboard','priority','konnect','urgent','negative','watch','check']},
+  {title:'Categorise & Tag', snippet:'Apply/verify Sentiment (Negative, Neutral, Positive). Categorise each mention with correct classification.', tab:'flow', icon:'ti-tag', bg:'var(--amber-bg)', color:'var(--amber-text)', keywords:['categorise','tag','sentiment','classify','category','label','type']},
+  {title:'Kapture Ticket', snippet:'Search for existing ticket. Create new if none. Reopen if incorrectly closed. Update notes if already open.', tab:'flow', icon:'ti-ticket', bg:'var(--purple-bg)', color:'var(--purple-text)', keywords:['kapture','ticket','create','reopen','notes','crm','open','closed','existing']},
+  {title:'First Response (FRT)', snippet:'Send initial public reply or DM within the FRT target. Use Hinglish templates — always personalise.', tab:'flow', icon:'ti-clock', bg:'var(--amber-bg)', color:'var(--amber-text)', keywords:['frt','first response','reply','30 min','15 min','dm','initial','respond','quick','fast','time']},
+  {title:'Complaint Handling', snippet:'Details available: call customer via Ameyo, coordinate internally. Details NOT available: DM requesting details or share form link.', tab:'flow', icon:'ti-alert-circle', bg:'var(--red-bg)', color:'var(--red-text)', keywords:['complaint','handling','call','ameyo','details','no details','form','coordinate','issue','problem']},
+  {title:'Resolution & Follow-up', snippet:'Follow up with final solution on the social channel after internal resolution. TAT: 48 hours.', tab:'flow', icon:'ti-check', bg:'var(--green-bg)', color:'var(--green-text)', keywords:['resolution','resolve','follow up','solution','final','48 hours','tat','close','fix']},
+  {title:'Final Closure', snippet:'Close ticket only when fully solved. Last reply on customer comment must always be from our team.', tab:'flow', icon:'ti-circle-check', bg:'var(--teal-bg)', color:'var(--teal-text)', keywords:['closure','close','closed','final','last reply','solved','complete','done','end']},
+  {title:'Notes in KI', snippet:'Add Kapture ticket number and date of creation in the Konnect Insight notes section.', tab:'flow', icon:'ti-notes', bg:'var(--blue-bg)', color:'var(--blue-text)', keywords:['notes','ki','konnect insight','kapture id','ticket number','log','document','note']},
+  {title:'Comment Moderation', snippet:'Review public comments. Apply hide/delete rules. Do NOT delete genuine criticism.', tab:'moderation', icon:'ti-shield-check', bg:'var(--red-bg)', color:'var(--red-text)', keywords:['moderation','hide','delete','comment','spam','abusive','moderate','remove','flag']},
+  {title:'Reopen Rule', snippet:'Customer replies to closed ticket → reopen. Thank-you reply → close immediately. Dissatisfaction → address within 24h.', tab:'flow', icon:'ti-refresh', bg:'var(--amber-bg)', color:'var(--amber-text)', keywords:['reopen','reopen rule','24 hours','thank you','dissatisfied','reopen ticket','customer reply']},
+  {title:'Irrelevant Ticket', snippet:'Spam, non-Wiom text, auto-generated emails, unrelated images → mark as Irrelevant Ticket.', tab:'flow', icon:'ti-trash', bg:'var(--red-bg)', color:'var(--red-text)', keywords:['irrelevant','spam','non wiom','unrelated','auto generated','bot','junk','ignore']},
+  {title:'User Input in KI', snippet:'Fill contact details, real name, and Kapture ticket ID in the KI ticket fields.', tab:'flow', icon:'ti-user', bg:'var(--blue-bg)', color:'var(--blue-text)', keywords:['user input','contact details','real name','fill','kapture id','customer info','details','data entry']},
+
+  // ── SENTIMENT ──
+  {title:'Negative — Complaint response', snippet:'Tone: Empathetic, Apologetic, Solution-oriented. Acknowledge frustration, apologise, request private details, assure follow-up within 24h.', tab:'sentiment', icon:'ti-mood-sad', bg:'var(--red-bg)', color:'var(--red-text)', keywords:['negative','complaint','angry','upset','frustrated','irate','rude','aggressive','sad','bad','worst','pathetic','problem','issue','not working','broke','failed','angry customer','irate customer','mad']},
+  {title:'Neutral — Query / Request response', snippet:'Tone: Informative, Friendly, Helpful. Address the query directly and invite further questions.', tab:'sentiment', icon:'ti-mood-neutral', bg:'var(--blue-bg)', color:'var(--blue-text)', keywords:['neutral','query','request','question','enquiry','plan','invoice','information','asking','want to know','how to','what is']},
+  {title:'Positive — Praise response', snippet:'Tone: Warm, Appreciative, Enthusiastic. Thank the user, reinforce the positive, encourage continued engagement.', tab:'sentiment', icon:'ti-mood-happy', bg:'var(--green-bg)', color:'var(--green-text)', keywords:['positive','praise','thanks','thank you','happy','great','good','love','excellent','amazing','satisfied','appreciation','compliment']},
+
+  // ── TEMPLATES ──
+  {title:'Off-hour auto-reply — Email', snippet:'Dear Customer, Aapka message humein mil gaya hai. Hum 24 ghante ke andar aapse sampark karenge.', tab:'templates', icon:'ti-mail', bg:'var(--blue-bg)', color:'var(--blue-text)', keywords:['email','off hour','auto reply','gmail','after hours','night','weekend','template','hinglish','message']},
+  {title:'Off-hour auto-reply — Instagram / Facebook', snippet:'Hum maafi chahte hain ki aapko samasya face karni padi. Kripya form fill karein.', tab:'templates', icon:'ti-brand-instagram', bg:'var(--purple-bg)', color:'var(--purple-text)', keywords:['instagram','facebook','social','dm','auto reply','off hour','template','hinglish','form']},
+  {title:'Request private details (public reply)', snippet:'Kripya humein apna order number ya registered number DM karein.', tab:'templates', icon:'ti-message-dots', bg:'var(--teal-bg)', color:'var(--teal-text)', keywords:['private details','order number','registered number','dm','public reply','template','no details','missing info']},
+
+  // ── MODERATION ──
+  {title:'Hide / Delete comment', snippet:'Spam ads, abusive or obscene content, off-topic trolling, community standards violation → Hide or Delete.', tab:'moderation', icon:'ti-eye-off', bg:'var(--red-bg)', color:'var(--red-text)', keywords:['hide','delete','abusive','obscene','spam','troll','community','guidelines','violation','offensive','inappropriate']},
+  {title:'Hide ONLY — Personal data posted', snippet:'If user accidentally posts personal data (phone number) → Hide comment, DM the user.', tab:'moderation', icon:'ti-lock', bg:'var(--amber-bg)', color:'var(--amber-text)', keywords:['personal data','phone number','private data','hide only','accidental','sensitive','privacy']},
+  {title:'Do NOT delete genuine criticism', snippet:'Honest criticism or legitimate service queries must NOT be deleted. Respond using Negative Sentiment guidelines.', tab:'moderation', icon:'ti-shield', bg:'var(--green-bg)', color:'var(--green-text)', keywords:['criticism','do not delete','genuine','legitimate','honest','service query','negative feedback','complaint']},
+
+  // ── ESCALATION ──
+  {title:'L1 Escalation — Supervisor', snippet:'Triggers: FRT/TAT missed, unable to collect customer details, high-volume or sentiment spike. Notify supervisor immediately.', tab:'escalation', icon:'ti-alert-triangle', bg:'var(--amber-bg)', color:'var(--amber-text)', keywords:['l1','escalation','escalate','supervisor','manager','frt missed','tat missed','spike','volume','notify']},
+  {title:'L2 Escalation — Director / Head', snippet:'Triggers: Major brand crisis, severe reputation risk, legal/safety issue, system downtime. Email subject: "Critical".', tab:'escalation', icon:'ti-flame', bg:'var(--red-bg)', color:'var(--red-text)', keywords:['l2','escalation','director','head','brand crisis','legal','safety','reputation','critical','viral','system down']},
+  {title:'Violated SLA — immediate steps', snippet:'Flag ticket overdue → notify supervisor → add internal note → escalate if >30 min FRT or >48 hrs TAT.', tab:'escalation', icon:'ti-clock-x', bg:'var(--red-bg)', color:'var(--red-text)', keywords:['sla','violated','overdue','missed','breach','late','delayed','flag','notify','escalate']},
+
+  // ── PLATFORMS ──
+  {title:'Facebook', snippet:'DMs, comments, hashtags — monitored via Konnect Insight.', tab:'platforms', icon:'ti-brand-facebook', bg:'var(--blue-bg)', color:'var(--blue-text)', keywords:['facebook','fb','meta','social','platform']},
+  {title:'Instagram', snippet:'DMs, comments, hashtags — monitored via Konnect Insight.', tab:'platforms', icon:'ti-brand-instagram', bg:'var(--purple-bg)', color:'var(--purple-text)', keywords:['instagram','insta','ig','reels','story','social']},
+  {title:'Twitter / X', snippet:'Mentions, DMs, hashtags — monitored via Konnect Insight.', tab:'platforms', icon:'ti-brand-x', bg:'var(--surface2)', color:'var(--text)', keywords:['twitter','x','tweet','mention','hashtag']},
+  {title:'Google Reviews / Play Store', snippet:'Ratings and reviews monitored as review platforms.', tab:'platforms', icon:'ti-star', bg:'var(--amber-bg)', color:'var(--amber-text)', keywords:['google','review','play store','rating','stars','app store','android']},
+  {title:'Gmail / Email', snippet:'Email integration — fetched as tickets directly into Konnect Insight.', tab:'platforms', icon:'ti-mail', bg:'var(--red-bg)', color:'var(--red-text)', keywords:['gmail','email','inbox','mail','ticket']},
+  {title:'Konnect Insight (KI)', snippet:'Central ORM dashboard — aggregates all mentions, reviews, DMs from all scoped platforms.', tab:'platforms', icon:'ti-topology-star-3', bg:'var(--blue-bg)', color:'var(--blue-text)', keywords:['konnect','ki','dashboard','orm','tool','platform','system']},
+  {title:'WIOM HUB', snippet:'Customer details — name, device ID, data usage, billing cycle, address, partner, zone, technician.', tab:'platforms', icon:'ti-database', bg:'var(--purple-bg)', color:'var(--purple-text)', keywords:['wiom hub','hub','customer details','device id','billing','address','partner','zone','technician']},
+  {title:'Ameyo Dialer', snippet:'All customer and partner calls must be made through Ameyo. Never use personal numbers.', tab:'platforms', icon:'ti-phone-call', bg:'var(--green-bg)', color:'var(--green-text)', keywords:['ameyo','dialer','call','phone','dial','calling','contact','number']},
+  {title:'Lab App', snippet:'Feasibility check using lat/long — verify if area is serviceable for installation or shifting.', tab:'platforms', icon:'ti-map-pin', bg:'var(--teal-bg)', color:'var(--teal-text)', keywords:['lab app','feasibility','lat','long','location','serviceable','installation','shifting','area','check']},
+
+  // ── SHIFT ──
+  {title:'Start of shift — checklist', snippet:'Log into all systems. Review overnight tickets. Prioritise urgent, escalated, or aging tickets first.', tab:'shift', icon:'ti-sun', bg:'var(--amber-bg)', color:'var(--amber-text)', keywords:['start','shift','morning','begin','login','overnight','checklist','10 am']},
+  {title:'End of shift — checklist', snippet:'Update all open tickets. Reset queue in KI. Share EOD report in Slack Cx_all at 7:30 pm.', tab:'shift', icon:'ti-moon', bg:'var(--blue-bg)', color:'var(--blue-text)', keywords:['end','shift','evening','logout','eod','report','reset','queue','7:30','slack','cx_all','handoff']},
+  {title:'EOD Report — Slack Cx_all', snippet:'Share daily summary in Slack channel Cx_all — tickets received, resolved, escalated, and high-priority ongoing issues.', tab:'shift', icon:'ti-brand-slack', bg:'var(--purple-bg)', color:'var(--purple-text)', keywords:['eod','report','slack','cx_all','daily','summary','end of day','highlight','handover']},
+  {title:'FRT & TAT metrics', snippet:'FRT ≤ 30 min during business hours. TAT ≤ 48 hours from ticket creation to resolution.', tab:'shift', icon:'ti-chart-bar', bg:'var(--green-bg)', color:'var(--green-text)', keywords:['frt','tat','metric','kpi','target','sla','performance','compliance','30 min','48 hours','measure']},
+];
+
+// Intent map — natural language phrases → tab
+const INTENT_MAP = [
+  {phrases:['how to close','closing ticket','close a ticket','ticket closure','done with ticket'], tab:'flow', title:'Final Closure'},
+  {phrases:['angry customer','irate','rude customer','aggressive','very upset','very angry','frustrated customer'], tab:'sentiment', title:'Negative — Complaint response'},
+  {phrases:['what to do when customer is happy','positive feedback','customer happy'], tab:'sentiment', title:'Positive — Praise response'},
+  {phrases:['someone asking about plan','plan enquiry','general query'], tab:'sentiment', title:'Neutral — Query / Request response'},
+  {phrases:['how to escalate','when to escalate','need to escalate','raise escalation'], tab:'escalation', title:'L1 Escalation — Supervisor'},
+  {phrases:['brand crisis','viral post','legal issue','reputation risk'], tab:'escalation', title:'L2 Escalation — Director / Head'},
+  {phrases:['missed sla','late response','couldn\'t respond in time','response delayed'], tab:'escalation', title:'Violated SLA — immediate steps'},
+  {phrases:['how to reply','send a reply','respond to customer','what to write'], tab:'templates', title:'Off-hour auto-reply — Email'},
+  {phrases:['no contact details','customer didn\'t share number','no phone number','missing details'], tab:'flow', title:'Complaint Handling'},
+  {phrases:['delete comment','remove comment','hide comment','abusive comment'], tab:'moderation', title:'Hide / Delete comment'},
+  {phrases:['end of day','end of shift','shift over','logout','log out'], tab:'shift', title:'End of shift — checklist'},
+  {phrases:['start of day','start of shift','morning checklist','shift start'], tab:'shift', title:'Start of shift — checklist'},
+];
+
+let _searchActive = false;
+
+function highlight(text, query){
+  if(!query) return esc(text);
+  const words = query.trim().split(/\s+/).filter(w=>w.length>1);
+  let result = esc(text);
+  words.forEach(w=>{
+    const re = new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')', 'gi');
+    result = result.replace(re, '<span class="search-highlight">$1</span>');
+  });
+  return result;
+}
+
+function scoreItem(item, q){
+  const lq = q.toLowerCase();
+  const words = lq.split(/\s+/).filter(w=>w.length>1);
+  let score = 0;
+  // Exact keyword match
+  item.keywords.forEach(k=>{ if(lq.includes(k)) score+=10; });
+  // Word-level match on title
+  words.forEach(w=>{ if(item.title.toLowerCase().includes(w)) score+=6; });
+  // Word-level match on snippet
+  words.forEach(w=>{ if(item.snippet.toLowerCase().includes(w)) score+=3; });
+  // Intent detection
+  INTENT_MAP.forEach(intent=>{
+    if(intent.title===item.title){
+      intent.phrases.forEach(p=>{ if(lq.includes(p)||p.includes(lq)) score+=15; });
+    }
+  });
+  return score;
+}
+
+const TAB_LABELS = {flow:'Ticket flow', sentiment:'Response guide', templates:'Templates', moderation:'Moderation', escalation:'Escalation', platforms:'Platforms', shift:'Shift duties'};
+
+function onSearch(q){
+  const resultsEl = document.getElementById('search-results');
+  const clearBtn  = document.getElementById('search-clear');
+  clearBtn.classList.toggle('show', q.length>0);
+
+  if(!q.trim()){ resultsEl.classList.remove('open'); _searchActive=false; return; }
+  _searchActive = true;
+
+  // Score all items
+  const scored = SEARCH_INDEX
+    .map(item=>({...item, score: scoreItem(item, q)}))
+    .filter(item=>item.score>0)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,8);
+
+  if(scored.length===0){
+    resultsEl.innerHTML=`<div class="search-empty"><i class="ti ti-search-off"></i>No results for "<strong>${esc(q)}</strong>"<br><span style="font-size:12px;margin-top:4px;display:block">Try: "angry customer", "close ticket", "FRT", "hide comment", "escalate"</span></div>`;
+    resultsEl.classList.add('open');
+    return;
+  }
+
+  // Group by tab
+  const groups = {};
+  scored.forEach(item=>{
+    if(!groups[item.tab]) groups[item.tab]=[];
+    groups[item.tab].push(item);
+  });
+
+  let html='';
+  Object.keys(groups).forEach(tab=>{
+    html+=`<div class="search-group-label">${TAB_LABELS[tab]}</div>`;
+    groups[tab].forEach((item,idx)=>{
+      html+=`<div class="search-item" onclick="goToResult('${tab}','${esc(item.title)}',this)" tabindex="0">
+        <div class="search-item-icon" style="background:${item.bg};color:${item.color}"><i class="ti ${item.icon}"></i></div>
+        <div class="search-item-body">
+          <div class="search-item-title">${highlight(item.title,q)}</div>
+          <div class="search-item-snippet">${highlight(item.snippet,q)}</div>
+          <div class="search-item-tab"><i class="ti ti-arrow-right" style="font-size:10px"></i>${TAB_LABELS[tab]}</div>
+        </div>
+      </div>`;
+    });
+  });
+
+  resultsEl.innerHTML=html;
+  resultsEl.classList.add('open');
+}
+
+function goToResult(tab, title){
+  switchSec(tab);
+  clearSearch();
+  // Briefly highlight the matching content
+  setTimeout(()=>{
+    const steps = document.querySelectorAll('.step-title, .sent-title, .template-label, .esc-title, .platform-name, .card-title');
+    steps.forEach(el=>{
+      if(el.textContent.includes(title.replace(/&amp;/g,'&').replace(/&lt;/g,'<'))){
+        el.closest('.step,div.sent-card,.esc-card,.platform-row,.card')?.scrollIntoView({behavior:'smooth',block:'center'});
+        const target = el.closest('.step,div.sent-card,.esc-card,.platform-row');
+        if(target){
+          target.style.outline='2px solid var(--blue)';
+          target.style.outlineOffset='2px';
+          setTimeout(()=>{ target.style.outline=''; target.style.outlineOffset=''; },2000);
+        }
+      }
+    });
+  },200);
+}
+
+function clearSearch(){
+  document.getElementById('sop-search').value='';
+  document.getElementById('search-results').classList.remove('open');
+  document.getElementById('search-clear').classList.remove('show');
+  _searchActive=false;
+}
+
+function onSearchKey(e){
+  if(e.key==='Escape') clearSearch();
+  if(e.key==='ArrowDown'){
+    const first=document.querySelector('.search-item');
+    if(first) first.focus();
+    e.preventDefault();
+  }
+}
+
+// Close search when clicking outside
+document.addEventListener('click',e=>{
+  if(!document.getElementById('search-wrap')?.contains(e.target)) clearSearch();
+});
 
 /* ───── INIT ───── */
 getData();
