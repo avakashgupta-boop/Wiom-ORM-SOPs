@@ -661,6 +661,12 @@ Kripya humein apna order number ya registered number DM karein — hum aapki sam
         </div>
       </div>
       <div class="mgr-panel">
+        <div class="mgr-panel-title"><i class="ti ti-phone-call"></i>Call centre scripts</div>
+        <div class="sec-list">
+          <div class="sec-item" id="msi-scripts" onclick="loadMgrTab('scripts')"><i class="ti ti-script"></i>Review scripts (preview)</div>
+        </div>
+      </div>
+      <div class="mgr-panel">
         <div class="mgr-panel-title"><i class="ti ti-adjustments"></i>SLA targets</div>
         <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Changes reflect instantly in the agent view.</div>
         <label style="font-size:12px">FRT target</label>
@@ -1364,6 +1370,11 @@ function loadMgrTab(tab, silent){
       </div>`;
   }
 
+  else if(tab==='scripts'){
+    titleEl.textContent='Call Centre Scripts — Review';
+    pane.innerHTML=renderScriptsPane();
+  }
+
   else if(tab==='flow'){
     titleEl.textContent='Ticket flow — 12 steps';
     pane.innerHTML = c.steps.map((s,i)=>`
@@ -2017,6 +2028,339 @@ function onSearchKey(e){
 document.addEventListener('click',e=>{
   if(!document.getElementById('search-wrap')?.contains(e.target)) clearSearch();
 });
+
+/* ───── CALL CENTRE SCRIPTS ───── */
+const CALL_SCRIPTS = [
+  // ── WHAT IS WIOM ──
+  { cat:'What is Wiom', q:'Yeh Recharge-wala ghar ka net kya hai?', queue:'Sales/Status',
+    r1:'Wiom ek naye tarah ka recharge wala ghar ka net laaya hai. Poora ghar ek hi net se kaam kar sakta hai aur jaise mobile mein recharge hai, waise hi ise recharge kara ja sakta hai - jitna chaho utne din ka.\n(Stop. Don\'t explain further unless asked.)',
+    r2:'', newR:'', new10:'',
+    comments:'Agents must always say "Recharge-waala ghar ka net", regardless of what the customer says.' },
+  { cat:'What is Wiom', q:'Wiom kya hai?', queue:'Sales/Status',
+    r1:'Wiom ek "recharge wala ghar ka net" hai. Yeh kisi ek mobile ya computer ke liye nahi, poore ghar ke liye banaaya gaya hai. Isse ghar ke sab log mobile, TV aur laptop ek saath theek se chala sakte hain.',
+    r2:'Wiom Recharge-wala ghar ka net, balance ke hisaab se chalta hai. Jitne din use karein, utne din ka recharge. Zyada tar internet services fixed offering par chalti hain, chahe use karein ya na karein, poora mahine ka payment hota hai.',
+    newR:'', new10:'',
+    comments:'If asked "How is Wiom different from other internet services?": Wiom recharge-wala net balance ke hisaab se chalta hai — jitne din use karein, utne din ka recharge. Others have fixed monthly plans.' },
+  { cat:'What is Wiom', q:'Yeh mobile recharge jaisa ho gaya hai kya?', queue:'Sales/Status',
+    r1:'Haan, recharge ka tareeka mobile jaisa hai. Lekin yeh recharge wala ghar ka net hai jo poore ghar ke use ke liye banaaya gaya hai.',
+    r2:'', newR:'',
+    new10:'Nahi, yeh mobile recharge nahi hai. Sirf recharge karne ka tareeka thoda same lagega. Wiom poore ghar ka net hai — ek recharge mein TV, laptop aur sabke phone chal sakte hain. Mobile recharge ek phone ke liye hota hai; Wiom ka net poore ghar ke liye.',
+    comments:'' },
+
+  // ── SPEED ──
+  { cat:'Speed, Range & Devices', q:'Speed kitni aati hai?', queue:'Sales/Status',
+    r1:'Yeh recharge wala ghar ka net aise banaaya gaya hai ki 8–12 mobile, TV aur laptop ek saath theek se chal sakein. Aam taur par 80–100 Mbps ke aas-paas speed mil jaati hai.',
+    r2:'Aam taur par 80–100 Mbps ke aas-paas speed mil jaati hai.',
+    newR:'Yeh recharge-wala ghar ka net normal ghar ke use ke liye bana hai — mobile, TV aur laptop saath-saath chal sakein. Speed aam taur par 80–100 Mbps ke aas-paas hoti hai.',
+    new10:'', comments:'' },
+  { cat:'Speed, Range & Devices', q:'50 Mbps wala chahiye', queue:'Sales/Status',
+    r1:'Wiom mein Recharge days ke hisaab se hota hai, speed ke hisaab se nahi. Yeh ghar ka net hai jo TV, laptop aur 8–12 devices ke normal use ke liye hota hai.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'Speed, Range & Devices', q:'Netflix / YouTube / Office ka kaam ho jaayega?', queue:'Sales/Status',
+    r1:'Haan, recharge wala ghar ka net roz ke kaam ke liye banaaya gaya hai — video dekhna, office ka kaam, aur ghar ke sab logon ka saath-saath use.',
+    r2:'', newR:'', new10:'',
+    comments:'Do we reiterate "recharge wala ghar ka net" or can we simply say "Haan, yeh net roz ke kaam ke liye banaaya gaya hai"? Same rule as mentioned.' },
+  { cat:'Speed, Range & Devices', q:'Mere ghar chalega kya?', queue:'Sales/Status',
+    r1:'Recharge wala ghar ka net poore ghar ke liye design kiya gaya hai - TV, mobile, laptop sab connect kar sakte hai.',
+    r2:'', newR:'Recharge wala ghar ka net poore ghar ke liye design hota hai — TV, mobile, laptop. Ghar ke size/diwaron se coverage alag ho sakta hai; net lagane ke time sahi jagah device set hota hai.',
+    new10:'', comments:'' },
+  { cat:'Speed, Range & Devices', q:'Mujhe kitna range milega?', queue:'Sales/Status',
+    r1:'Recharge wala ghar ka net normal ghar ke istemaal ke liye design hota hai — jaise TV, mobile aur laptop chalana. Ghar ke size aur diwaron ke hisaab se coverage alag ho sakta hai. Net lagane ke time par sahi jagah par device lagaya jaata hai.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'Speed, Range & Devices', q:'Ek saath kitne log chala sakte hain?', queue:'Sales/Status',
+    r1:'Aam ghar ke liye banaaya gaya hai — jahan 8–12 mobile, TV aur laptop ek saath use hote hain.',
+    r2:'', newR:'', new10:'', comments:'' },
+
+  // ── INSTALLATION TIMELINE ──
+  { cat:'Installation Timeline', q:'Kitne din mein recharge wala ghar ka net lag jaata hai?', queue:'Sales/Status',
+    r1:'Booking ke baad aap App par khud recharge wala ghar ka net lagane ka din aur time choose kar sakte hain.',
+    r2:'', newR:'Booking ke baad aap App par khud din aur time choose karte hain — aam taur par 2–3 din mein net set up ho jaata hai.',
+    new10:'', comments:'Agents must always say "Recharge-waala ghar ka net".' },
+  { cat:'Installation Timeline', q:'Booking ke baad kya hai?', queue:'Sales/Status',
+    r1:'Booking payment complete hone ke baad, App par hi netbox set-up/Net lagane ka time aur unse judi jankari dikh jaati hai.',
+    r2:'Booking payment ke baad, App par Net lagane ka time dikhai deta hai. Net lagane complete hone par recharge wala ghar ka net active ho jaata hai. Uske baad recharge aap jab chahein tab App se karte hain.',
+    newR:'Booking payment complete hone ke baad App par Net Box setup, net lagane ka time aur aage ki jankari dikh jaati hai.',
+    new10:'',
+    comments:'If customer insists "mujhe jaana hai ki aage kya hoga" — describe the immediate next visible system events. Customer may be seeking assurance before final payment.' },
+  { cat:'Installation Timeline', q:'Installation kab hoga?', queue:'Sales/Status',
+    r1:'Aap Net lagane ka date Wiom App se hi choose kar sakte hain. Saari jankari aapko Wiom App mein hi dikh jaayegi.',
+    r2:'Exact date nahi bata sakte, yeh App mein hi show hoga. Aam taur par 2–3 ke andar net set up ho jaata hai.',
+    newR:'Aam taur par 2–3 din mein set up ho jaata hai — exact date aap App mein dekh sakte hai.',
+    new10:'', comments:'Use "set up" not "installation".' },
+
+  // ── RECHARGE & PRICING ──
+  { cat:'Recharge & Pricing', q:'Roz ka recharge matlab kya?', queue:'Sales/Status',
+    r1:'Roz ka recharge ka matlab hai ki aap jitne din ke liye recharge karte hain, utne din service active rehti hai. Recharge khatam hone par service ruk jaati hai. Dubara recharge karne par fir se chalu ho jaati hai.',
+    r2:'', newR:'Jitne din ka recharge karte hain, utne din ghar ka net chalta hai. Recharge khatam hone par net ruk jaata hai. Dobara recharge karte hi net fir chalu ho jaata hai.',
+    new10:'', comments:'' },
+  { cat:'Recharge & Pricing', q:'Mahine ka kitna padega?', queue:'Sales/Status',
+    r1:'Wiom mein koi fixed recharge nahi hota. Aap jitna chahein utna recharge kara sakte hain — 1 din, 1 hafta ya jitne din chalaana ho. Recharge options aapko App par dikhte hain.',
+    r2:'', newR:'Fixed amount nahi hota — jitne din chahiye utna recharge. Aam taur par din ka ₹20–25, 7 din ka ₹60–66. Exact App mein dikhta hai.',
+    new10:'', comments:'' },
+  { cat:'Recharge & Pricing', q:'Plan kitne ka hai?', queue:'Sales/Status',
+    r1:'Wiom mein koi fixed recharge nahi hota. Aap jitna chahein utna recharge kara sakte hain — 1 din, 1 hafta ya jitne din chalaana ho.',
+    r2:'Wiom App mein "Recharge ke Vikalp/option" ka option hota hai. Us par click karke aap saare recharge options dekh sakte hain.',
+    newR:'Fixed amount nahi hota — jitne din chahiye utna recharge. Aam taur par din ka ₹20–25, 7 din ka ₹60–66. Exact App mein dikhta hai.',
+    new10:'', comments:'"Plan" is a banned word. Do not use it. Updated script.' },
+  { cat:'Recharge & Pricing', q:'(If customer asks exact plan price)', queue:'Sales/Status',
+    r1:'Aam taur par din ka ₹20–25 aur 28 din ka lag bhag ₹550–600 lag sakte hai. Exact amount hamesha aapko Wiom App mein show hota hai.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'Recharge & Pricing', q:'Aap bata do na, kitne ka padta hai.', queue:'Sales/Status',
+    r1:'Recharge aap apni need ke hisaab se choose kar sakte hain. Pura amount aur options App mein hi clearly dikhte hain.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'Recharge & Pricing', q:'Booking se pehle recharge dekh sakte hain?', queue:'Sales/Status',
+    r1:'(Confirm if he is on App first) Haan sir. Booking amount se pehle hi "Recharge ke Vikalp/option" button par jaakar recharge options dekh sakte hain.',
+    r2:'', newR:'Ji. Booking amount pay karne se pehle App mein "Recharge ke vikalp" par recharge options dekh sakte hain.',
+    new10:'', comments:'"Plan" is a banned word. Updated script.' },
+  { cat:'Recharge & Pricing', q:'Monthly fixed plan nahi hai kya?', queue:'Sales/Status',
+    r1:'Ismein fixed recharge nahi hota. Wiom recharge wala ghar ka net hai, jahan recharge duration aap chun sakte hain. Available options App par dikhte hain.',
+    r2:'', newR:'Monthly fixed nahi hota. Wiom recharge-wala ghar ka net hai — aap jitne din chahiye utne din ka recharge choose karte hain. Options App mein dikhte hain.',
+    new10:'', comments:'If customer says "mujhe App samajh nahi aa raha" — what should agent say? Updated script.' },
+  { cat:'Recharge & Pricing', q:'Purana wala available nahi hai kya? / Purana plan wapas kab aayega?', queue:'Sales/Status',
+    r1:'Wiom recharge wala ghar ka net hi available hai. App mein jo recharge options dikhte hain, wahi uplabdh options hote hain.',
+    r2:'', newR:'', new10:'', comments:'Updated script.' },
+  { cat:'Recharge & Pricing', q:'My pamphlet shows a ₹500 monthly plan / Why is recharge amount different?', queue:'Sales/Status',
+    r1:'Wiom recharge wala ghar ka net hi available hai. App mein jo recharge options dikhte hain, wahi chalte hai.',
+    r2:'', newR:'', new10:'',
+    comments:'"Plan" is a banned word. If customer says "APP mein mujhe samajh nahi aya ki kaha dikhenge" — no Response 2, stick to the script.' },
+  { cat:'Recharge & Pricing', q:'Dusre logon ko purana plan mil raha hai', queue:'Sales/Status',
+    r1:'Aapke App mein jo Vikalp/option hai, wahi aapke liye hote hai.',
+    r2:'', newR:'', new10:'', comments:'' },
+
+  // ── BOOKING PROCESS & CHARGES ──
+  { cat:'Booking Process & Charges', q:'Wiom mein connection kitne ka lagta hai?', queue:'Sales/Status',
+    r1:'Ghar ka net set up karne ke liye ₹100 booking amount hota hai. Netbox ke liye ₹300 security deposit hota hai. Uske baad service recharge ke hisaab se chalti hai.',
+    r2:'Yeh refundable hota hai. Jab aap service band karte hain, toh ₹300 wapas mil jaate hain.',
+    newR:'Ghar ka net set up karne ke liye ₹100 booking amount lagta hai. Net Box ke liye ₹300 refundable security deposit setup ke time dena hota hai. Uske baad aap jitne din chahiye utne din ka recharge kar sakte hain.',
+    new10:'', comments:'Share SD is refundable ONLY if customer asks. Do not volunteer this info.' },
+  { cat:'Booking Process & Charges', q:'Net lagane ke paise hain?', queue:'Sale',
+    r1:'Booking ke time ₹100 rupaye hote hain. Yeh engineer ke ghar aane aur net lagane ke liye hote hain.',
+    r2:'', newR:'₹100 booking fee hai — yeh isliye hai kyunki aapke yahan net box lagane ke liye ladka aata hai, sab setup karta hai. Aur ₹300 netbox ka security deposit hai jo aapko refund hoga jab aap connection hatwate hain.',
+    new10:'', comments:'' },
+  { cat:'Booking Process & Charges', q:'Dono alag kyun hain?', queue:'Sale',
+    r1:'₹100 Net lagane process ke liye hote hain, aur ₹300 net box ke liye hota hai.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'Booking Process & Charges', q:'300 kyun dene hote hain?', queue:'Sale',
+    r1:'Net box aapke use ke liye diya jaata hai. Isliye ₹300 uske liye hote hain, jo baad mein wapas mil jaate hain.',
+    r2:'', newR:'', new10:'', comments:'If customer asks "₹300 mujhe kab tak milenge aur kaise milenge" — see next entry.' },
+  { cat:'Booking Process & Charges', q:'Kab waapis milte hai? / Agar mujhe pasand nahi aaya toh?', queue:'Sale',
+    r1:'Haan, yeh refundable hota hai. Jab aap service band karte hain, toh ₹300 wapas mil jaate hain.',
+    r2:'', newR:'', new10:'', comments:'If customer asks "₹300 mujhe kab tak milenge aur kaise milenge" — see next entry.' },
+  { cat:'Booking Process & Charges', q:'Kab milenge? Kaise milenge?', queue:'Sale',
+    r1:'Netbox return confirm hone ke baad ₹300 same account par refund ho jaate hain.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'Booking Process & Charges', q:'Aaj hi poore ₹400 dene padenge?', queue:'Sale',
+    r1:'Booking ke time ₹100 diye jaate hain. Baaki ₹300 baad mein, jab engineer aakar net box lagata hai.',
+    r2:'', newR:'', new10:'', comments:'₹100 at booking, ₹300 at time of installation. Confirmed.' },
+  { cat:'Booking Process & Charges', q:'Cash de sakte hain?', queue:'Sale',
+    r1:'Wiom ka net sirf Wiom App se recharge hota hai. Agar aapke paas UPI ya card nahi hai, toh aap kisi dost, parivaar ke member ya paas ki dukaan se Wiom App ka QR scan karva kar recharge kara sakte hain.',
+    r2:'', newR:'', new10:'',
+    comments:'Customers wanting to pay in cash can ask someone to pay via UPI on their QR code and give that person cash. Covered in script.' },
+  { cat:'Booking Process & Charges', q:'Kya karna hoga?', queue:'Sales',
+    r1:'Aap Wiom App mein jaakar booking kar sakte hain. Booking ke baad, aage ki saari jankari aapko Wiom App mein hi dikh jaayegi.',
+    r2:'', newR:'Aap Wiom App mein jaakar booking kar sakte hain. Aage ki jankari App mein dikh jaayegi.',
+    new10:'', comments:'' },
+  { cat:'Booking Process & Charges', q:'Booking ke time mujhe kitne paise dene padenge?', queue:'Sales',
+    r1:'Booking ke time ₹100 booking amount dena hota hai. Netbox ke liye ₹300 security deposit set up ke time liya jaata hai.\n(If customer asks about ₹300 refund — then only say yes)',
+    r2:'Agar Net lagane nahi hota, toh max 14 din mein booking ka refund apne-aap aapke account mein ho jaata hai.',
+    newR:'Booking ke time ₹100 lagta hai. Net Box ke liye ₹300 security deposit setup ke time dena hota hai.',
+    new10:'', comments:'Do not give clarity on refund unless customer asks. Updated script.' },
+  { cat:'Booking Process & Charges', q:'Booking fee kyu hai?', queue:'Sales',
+    r1:'Booking confirm hone par engineer aapka ghar visit karte hain, wiring karte hain aur poora Net lagane ka process karte hain — yeh fee uske liye hain.',
+    r2:'', newR:'', new10:'', comments:'Updated script.' },
+  { cat:'Booking Process & Charges', q:'Kya booking fee refundable hai?', queue:'Sales',
+    r1:'Agar kisi bhi wajah se engineer nahi aa paata hai, toh ₹100 ka refund ho jaata hai.',
+    r2:'', newR:'', new10:'', comments:'What to reply if customer asks when they will receive the refund? Currently directing to App. Process TBD.' },
+
+  // ── THE APP ──
+  { cat:'The App', q:'App download karna zaroori hai?', queue:'Sales',
+    r1:'Haan. Recharge wala ghar ka net App ke through hi book aur manage hota hai. Saari jankari App mein hi dikhti hai.',
+    r2:'', newR:'', new10:'', comments:'' },
+
+  // ── UNDECIDED CUSTOMER ──
+  { cat:'Undecided Customer', q:'Abhi decide nahi karna, baad mein dekh lenge?', queue:'Sales',
+    r1:'Bilkul. Aap jab chahein, App par jaakar decide kar sakte hain.',
+    r2:'', newR:'', new10:'',
+    comments:'If this is a follow-up question, do we need to repeat "recharge wala ghar ka net"? We are repeating "App" again & again.' },
+
+  // ── NEW CONNECTION ──
+  { cat:'New Connection', q:'Wiom ka naya connection ka process kya hai?', queue:'Sales',
+    r1:'Wiom ka Recharge-wala ghar ka net sirf App ke through book hota hai. App par jaakar aap area check kar sakte hain aur booking kar sakte hain. Booking ke baad aage ke saare steps bhi App mein hi dikhte hain.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'New Connection', q:'Mujhe ek aur Wiom connection chahiye / Can I book from same mobile?', queue:'Sales',
+    r1:'Agar aapko ek aur booking karni hai, toh Wiom App download karke ek naya mobile number add karna hoga. Har number par ek hi service book hoti hai.',
+    r2:'', newR:'', new10:'', comments:'"Connection" is a banned word.' },
+  { cat:'New Connection', q:'App mein mera area non-serviceable dikh raha hai, kyun?', queue:'Sales',
+    r1:'Wiom ka net aapke area mein milta hai ya nahi, yeh App par hi dikh jaata hai. Agar abhi dikh raha hai ki Wiom aapke ilake mein uplabdh nahi hai, toh iska matlab hai ki aapke bataye pate par abhi Wiom uplabdh nahi hai. Jaise hi availability hogi, App mein update dikh jaayega.',
+    r2:'', newR:'', new10:'', comments:'' },
+
+  // ── OTHER / OUT OF SCOPE ──
+  { cat:'Other (Out of Scope)', q:'OTT bundle milega kya?', queue:'Sales/Status',
+    r1:'Recharge wala ghar ka net mein is tarah ka bundle option available nahi hai.',
+    r2:'', newR:'Nahi, Wiom recharge-wala ghar ka net mein OTT bundle available nahi hai.',
+    new10:'', comments:'"OTT" is a banned word. Updated script.' },
+  { cat:'Other (Out of Scope)', q:'iPhone ke liye App hai kya?', queue:'Sales/Status',
+    r1:'Wiom ki App abhi iPhone ke liye uplabh nahi hai.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'Other (Out of Scope)', q:'Why is customer care if you only redirect me to the App all the time?', queue:'Sales/Status',
+    r1:'Recharge wala ghar ka net App se chalta hai. Customer care ka role cheezein clear karna aur App se judi baaton mein madad karna hai.',
+    r2:'', newR:'', new10:'', comments:'' },
+
+  // ── POST BOOKING / INSTALLATION ISSUES ──
+  { cat:'Post-Booking & Installation Issues', q:'"Technical team will connect" dikh raha hai, 24 ghante ho gaye.', queue:'Status',
+    r1:'Booking ke baad saari updates App par hi dikhti hain. "Technical team will connect" ka matlab hai ki abhi hamari team is par kaam kar rahi hai. Exact timing nahi bata sakte. Jaise hi next step hota hai, App par update dikh jaata hai.',
+    r2:'', newR:'', new10:'',
+    comments:'Nobody has called me yet & no one is picking my call — what do I do? Currently only option is to wait. If too frustrated, customer can cancel.' },
+  { cat:'Post-Booking & Installation Issues', q:'Nobody has called me yet & no one is picking my call, what do I do?', queue:'Status',
+    r1:'Samajh aa raha hai ki abhi tak call connect nahi ho pa raha. Yeh deri Wiom mein note hogayi hai. Is stage par aapko kuch alag se karne ki zaroorat nahi hoti. Net set-up na hone par booking ka paisa automatically wapas ho jaata hai.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'Post-Booking & Installation Issues', q:'I wasn\'t at home when the engineer came.', queue:'Status',
+    r1:'Theek hai. Aap Wiom App mein engineer ka number dekh sakte hain aur unhe directly call karke status check kar sakte hain.',
+    r2:'', newR:'', new10:'', comments:'Check this case with Dhruv.' },
+  { cat:'Post-Booking & Installation Issues', q:'Technician ka call aaya tha par maine miss kr diya', queue:'Status',
+    r1:'Theek hai. Aap Wiom App mein engineer ka number dekh sakte hain aur unhe directly call karke status check kar sakte hain.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'Post-Booking & Installation Issues', q:'Technician ne connection dene se mana kr diya hai', queue:'Status',
+    r1:'Agar engineer ne recharge wala ghar ka net lagane se mana kar diya, toh yeh system issue maana jaata hai. Main isko log kar raha/rahi hoon — aapko App par hi next update milega.',
+    r2:'', newR:'', new10:'', comments:'' },
+  { cat:'Post-Booking & Installation Issues', q:'App ke page mein kuch nai dikha rha', queue:'Status',
+    r1:'Agar abhi kuch visible nahi hai, toh App ek baar poori tarah band karke dobara khol kar dekhein.',
+    r2:'Agar App abhi bhi nahi khul raha hai toh yeh system issue maana jaata hai. Main isko log kar raha/rahi hoon. Is stage par aapse koi action required nahi hai.',
+    newR:'', new10:'', comments:'' },
+
+  // ── LATE INSTALLATION & REFUNDS ──
+  { cat:'Late Installation & Refunds', q:'Koi aaya nahi hai abhi tak / Installation hua nahi hai', queue:'Status',
+    r1:'Samajh aa raha hai ki abhi tak koi aaya nahi hai. Yeh deri Wiom mein note hogayi hai. Agar 14 din ho jaate hain aur net lagane nahi hota, toh booking ka refund apne-aap ho jaata hai.',
+    r2:'', newR:'', new10:'', comments:'Confirm if 14 days is correct.' },
+  { cat:'Late Installation & Refunds', q:'Mujhe booking cancel karni hai, bohot time lag raha hai', queue:'Status',
+    r1:'Samajh aa raha hai ki delay ki wajah se aap cancel karna chahte hain. Agar 14 din ke andar Net lagane complete nahi hota hai, toh amount apne aap refund ho jaata hai.\n\nAap batayein — kya aap thoda aur wait karna chahte hain, ya aap abhi cancellation ke liye aage badhna chahte hain?',
+    r2:'', newR:'', new10:'',
+    comments:'Try to understand why the delay is there — is it a bug? If not, customer can cancel booking via chat.' },
+  { cat:'Late Installation & Refunds', q:'Booking ka ₹100 refundable hai kya?', queue:'Sales/Status',
+    r1:'Yadi kisi wajah se Net lagane samay se nahi ho payega toh aapki fees waapis mil jayegi.',
+    r2:'', newR:'', new10:'', comments:'Confirm the refund process from Dhruv if customer pushes.' },
+  { cat:'Late Installation & Refunds', q:'Auto refund kab hoga?', queue:'Status',
+    r1:'Agar net Net lagane nahi hota, toh max 14 din mein booking ka refund apne-aap aapke account mein ho jaata hai.',
+    r2:'', newR:'', new10:'', comments:'Clarity pending — will update once confirmed.' },
+  { cat:'Late Installation & Refunds', q:'Mera Refund kb ayga?', queue:'Status',
+    r1:'Samajh aa raha hai ki aap cancel karna chahte hain. Agar 14 din ke andar set up complete nahi hota hai, toh amount apne aap refund ho jaata hai.\n\nAap batayein — kya aap thoda aur wait karna chahte hain, ya aap abhi cancellation ke liye aage badhna chahte hain?',
+    r2:'(If customer chooses to cancel) Theek hai, aap Wiom App mein jaakar "cancel" likh sakte hai. Aapka ₹100 booking amount aapko 3–5 din mein refund ho jaayega.',
+    newR:'', new10:'', comments:'' },
+  { cat:'Late Installation & Refunds', q:'All installation-related follow-ups', queue:'Status',
+    r1:'Samajh aa raha hai ki abhi tak net set up nahi hua. Yeh deri Wiom mein note hogayi hai. Aap chahe toh thoda intezaar kar sakte hai, ya cancel kar sakte hai. App mein dono options hai. Agar net set up nahi hota, toh aapko booking ka refund mil jaata hai.',
+    r2:'', newR:'', new10:'',
+    comments:'If date not given but >2 days from booking confirmed and no active interest = delay. If date given and date breached and booking still with partner = delay.' },
+];
+
+function renderScriptsPane(){
+  // Group by category
+  const groups = {};
+  CALL_SCRIPTS.forEach(s=>{ if(!groups[s.cat]) groups[s.cat]=[]; groups[s.cat].push(s); });
+
+  const catColors = {
+    'What is Wiom':'blue','Speed, Range & Devices':'teal','Installation Timeline':'amber',
+    'Recharge & Pricing':'purple','Booking Process & Charges':'green','The App':'blue',
+    'Undecided Customer':'amber','New Connection':'teal','Other (Out of Scope)':'red',
+    'Post-Booking & Installation Issues':'red','Late Installation & Refunds':'red'
+  };
+
+  const totalEntries = CALL_SCRIPTS.length;
+  const updatedEntries = CALL_SCRIPTS.filter(s=>s.new10||s.newR).length;
+  const openComments = CALL_SCRIPTS.filter(s=>s.comments).length;
+
+  let html = `
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:100px;background:var(--blue-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px">
+        <div style="font-size:22px;font-weight:500;color:var(--blue-text)">${totalEntries}</div>
+        <div style="font-size:12px;color:var(--blue-text);opacity:.8">Total scripts</div>
+      </div>
+      <div style="flex:1;min-width:100px;background:var(--green-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px">
+        <div style="font-size:22px;font-weight:500;color:var(--green-text)">${updatedEntries}</div>
+        <div style="font-size:12px;color:var(--green-text);opacity:.8">Updated scripts</div>
+      </div>
+      <div style="flex:1;min-width:100px;background:var(--amber-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px">
+        <div style="font-size:22px;font-weight:500;color:var(--amber-text)">${openComments}</div>
+        <div style="font-size:12px;color:var(--amber-text);opacity:.8">Open questions</div>
+      </div>
+    </div>
+
+    <div style="background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:16px;font-size:13px;color:var(--text2);display:flex;align-items:flex-start;gap:8px">
+      <i class="ti ti-info-circle" style="color:var(--blue);font-size:15px;flex-shrink:0;margin-top:1px"></i>
+      <span>This is a <strong style="color:var(--text)">manager-only preview</strong> of all call centre scripts from the uploaded file. Review each entry. Once you approve, click <strong style="color:var(--text)">"Publish to Agent View"</strong> (coming next) to make them visible to agents.</span>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <input type="text" id="script-search" oninput="filterScripts()" placeholder="Search by question, category or keyword…" style="font-size:13px;padding:8px 12px;width:100%;box-sizing:border-box">
+    </div>
+
+    <div id="scripts-list">`;
+
+  Object.entries(groups).forEach(([cat, entries])=>{
+    const col = catColors[cat] || 'blue';
+    html += `
+      <div class="script-group" data-cat="${esc(cat)}">
+        <div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px">
+          <div style="height:1px;background:var(--border);flex:0 0 8px"></div>
+          <span style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--${col}-text);background:var(--${col}-bg);padding:2px 8px;border-radius:20px;white-space:nowrap">${esc(cat)}</span>
+          <div style="height:1px;background:var(--border);flex:1"></div>
+          <span style="font-size:11px;color:var(--text3)">${entries.length} scripts</span>
+        </div>`;
+
+    entries.forEach((s,idx)=>{
+      const latest = s.new10 || s.newR || s.r1;
+      const isUpdated = !!(s.new10 || s.newR);
+      const updateLabel = s.new10 ? '10 Jun update' : s.newR ? '3 Jun update' : '';
+      const hasOldScript = isUpdated && s.r1;
+      const queueColor = s.queue.includes('Status') ? 'teal' : 'blue';
+
+      html += `
+        <div class="script-card" data-text="${esc((s.cat+' '+s.q+' '+latest).toLowerCase())}" style="border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;background:var(--surface)">
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+            <span style="background:var(--${queueColor}-bg);color:var(--${queueColor}-text);font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;flex-shrink:0;margin-top:1px">${esc(s.queue)}</span>
+            ${isUpdated?`<span style="background:var(--green-bg);color:var(--green-text);font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;flex-shrink:0;margin-top:1px"><i class="ti ti-refresh" style="font-size:10px"></i> ${updateLabel}</span>`:''}
+            <div style="font-size:13px;font-weight:500;color:var(--text);flex:1">${esc(s.q)}</div>
+          </div>
+
+          <div style="background:var(--green-bg);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;padding:8px 10px;margin-bottom:${(hasOldScript||s.r2||s.comments)?'8px':'0'}">
+            <div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">${isUpdated?'Latest script':'Script'}</div>
+            <div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6">${esc(latest)}</div>
+          </div>
+
+          ${s.r2?`<div style="background:var(--surface2);border-left:3px solid var(--border2);border-radius:0 var(--r) var(--r) 0;padding:8px 10px;margin-bottom:${(hasOldScript||s.comments)?'8px':'0'}">
+            <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">2nd response / follow-up</div>
+            <div style="font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.6">${esc(s.r2)}</div>
+          </div>`:''}
+
+          ${hasOldScript?`<details style="margin-bottom:${s.comments?'8px':'0'}">
+            <summary style="font-size:11px;color:var(--text3);cursor:pointer;padding:4px 0">Previous script (before update)</summary>
+            <div style="background:var(--surface2);border-left:3px solid var(--border);border-radius:0 var(--r) var(--r) 0;padding:8px 10px;margin-top:6px;font-size:13px;color:var(--text3);white-space:pre-wrap;line-height:1.6;text-decoration:line-through;opacity:.7">${esc(s.r1)}</div>
+          </details>`:''}
+
+          ${s.comments?`<div style="background:var(--amber-bg);border-left:3px solid var(--amber);border-radius:0 var(--r) var(--r) 0;padding:8px 10px">
+            <div style="font-size:11px;font-weight:600;color:var(--amber-text);margin-bottom:4px;display:flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:.04em"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Open question / note</div>
+            <div style="font-size:12px;color:var(--amber-text);line-height:1.5">${esc(s.comments)}</div>
+          </div>`:''}
+        </div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function filterScripts(){
+  const q = document.getElementById('script-search')?.value.toLowerCase()||'';
+  document.querySelectorAll('.script-card').forEach(card=>{
+    const match = !q || card.dataset.text.includes(q);
+    card.style.display = match?'':'none';
+  });
+  document.querySelectorAll('.script-group').forEach(grp=>{
+    const visible = [...grp.querySelectorAll('.script-card')].some(c=>c.style.display!=='none');
+    grp.style.display = visible?'':'none';
+  });
+}
 
 /* ───── INIT ───── */
 getData();
