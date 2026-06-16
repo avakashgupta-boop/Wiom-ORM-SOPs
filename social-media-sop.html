@@ -379,7 +379,6 @@ textarea{resize:vertical;line-height:1.7;min-height:120px}
     <button class="sec-tab" onclick="switchSec('overview')"><i class="ti ti-home"></i>Overview</button>
     <button class="sec-tab active" onclick="switchSec('flow')"><i class="ti ti-list-check"></i>Ticket flow</button>
     <button class="sec-tab" onclick="switchSec('sentiment')"><i class="ti ti-mood-smile"></i>Response guide</button>
-    <button class="sec-tab" onclick="switchSec('rules')"><i class="ti ti-clipboard-list"></i>Rules</button>
     <button class="sec-tab" onclick="switchSec('templates')"><i class="ti ti-message"></i>Templates</button>
     <button class="sec-tab" onclick="switchSec('moderation')"><i class="ti ti-shield-check"></i>Moderation</button>
     <button class="sec-tab" onclick="switchSec('escalation')"><i class="ti ti-alert-triangle"></i>Escalation</button>
@@ -407,50 +406,8 @@ textarea{resize:vertical;line-height:1.7;min-height:120px}
 
   </div>
 
-  <!-- ── SENTIMENT / RESPONSE ── -->
-  <div class="sec-panel" id="sec-sentiment">
-    <div class="grid3" id="sent-grid"></div>
-
-    <div class="card" style="margin-top:0">
-      <div class="card-title"><i class="ti ti-info-circle"></i>Universal reply rules</div>
-      <ul style="padding-left:1rem;font-size:14px;line-height:2;color:var(--text2)">
-        <li>Always use <strong style="color:var(--text)">Hinglish</strong> — polite, concise, never aggressive.</li>
-        <li>Personalise with the user's <strong style="color:var(--text)">name + "ji"</strong> for respect.</li>
-        <li>Never argue, never match a customer's aggressive tone.</li>
-        <li>Do <strong style="color:var(--text)">not</strong> post personal contact details publicly.</li>
-        <li>Always end with a warm sign-off: <em>"Wiom Support Team"</em>.</li>
-        <li>After every interaction, update the KI ticket status and notes.</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><i class="ti ti-git-branch"></i>Complaint handling decision</div>
-      <div class="grid2">
-        <div style="border-radius:var(--r);border:0.5px solid var(--border);padding:12px 14px;background:var(--teal-bg)">
-          <div style="font-size:13px;font-weight:500;color:var(--teal-text);margin-bottom:8px;display:flex;gap:6px;align-items:center"><i class="ti ti-circle-check" style="font-size:16px"></i> Customer details available</div>
-          <ol style="padding-left:1rem;font-size:13px;color:var(--teal-text);line-height:1.9">
-            <li>Add all details (name, contact) to KI ticket.</li>
-            <li>RCA history, then call the customer via Ameyo.</li>
-            <li>Send public acknowledgement on social profile.</li>
-            <li>Send WIP email reply in Gmail inbox after the call.</li>
-            <li>Escalate immediately for safety/legal/severe reputation risk.</li>
-          </ol>
-        </div>
-        <div style="border-radius:var(--r);border:0.5px solid var(--border);padding:12px 14px;background:var(--amber-bg)">
-          <div style="font-size:13px;font-weight:500;color:var(--amber-text);margin-bottom:8px;display:flex;gap:6px;align-items:center"><i class="ti ti-help-circle" style="font-size:16px"></i> Customer details NOT available</div>
-          <ol style="padding-left:1rem;font-size:13px;color:var(--amber-text);line-height:1.9">
-            <li>Reply publicly or in DM requesting details/form filling.</li>
-            <li>Do NOT post personal contact info publicly.</li>
-            <li>If no response after final attempt → note "No contact info".</li>
-            <li>Mark ticket resolved. If details arrive later, switch to WIP workflow.</li>
-          </ol>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── RULES & GUIDELINES (agent view) ── -->
-  <div class="sec-panel" id="sec-rules"></div>
+  <!-- ── RESPONSE GUIDE (sentiment + rules merged) ── -->
+  <div class="sec-panel" id="sec-sentiment" id="sec-response-guide"></div>
 
   <!-- ── TEMPLATES ── -->
   <div class="sec-panel" id="sec-templates">
@@ -1203,7 +1160,7 @@ function switchSec(id){
   });
   document.querySelectorAll('.sec-panel').forEach(p=>p.classList.toggle('active',p.id==='sec-'+id));
   if(id==='overview') renderOverviewContent();
-  if(id==='rules') renderAgentRules();
+  if(id==='sentiment') renderSentiment();
 }
 
 /* ───── RENDER FLOW ───── */
@@ -1225,17 +1182,187 @@ function renderFlow(){
 /* ───── RENDER SENTIMENT ───── */
 function renderSentiment(){
   const SENTIMENTS = getContent().sentiments;
-  document.getElementById('sent-grid').innerHTML = SENTIMENTS.map(s=>`
-    <div class="sent-card ${s.cls}">
-      <div class="sent-title"><i class="ti ${s.icon}" style="font-size:17px"></i>${s.label}</div>
-      <div class="sent-body">
-        <div style="margin-bottom:5px"><strong>Tone:</strong> ${s.tone}</div>
-        <div style="margin-bottom:5px"><strong>Issue types:</strong> ${s.types}</div>
-        <div style="margin-bottom:5px"><strong>Mandatory actions:</strong> ${s.actions}</div>
-        <div><strong>KI action:</strong> ${s.ki}</div>
+  const r = getRules();
+
+  /* ── Sentiment cards ── */
+  const sentClsMap = {negative:'red', neutral:'blue', positive:'green'};
+  const sentCards = SENTIMENTS.map(s=>{
+    const col = sentClsMap[s.cls] || 'blue';
+    return `<div style="background:var(--${col}-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+        <i class="ti ${s.icon}" style="font-size:18px;color:var(--${col}-text)"></i>
+        <span style="font-size:13px;font-weight:600;color:var(--${col}-text)">${esc(s.label)}</span>
       </div>
+      <div style="font-size:12px;color:var(--${col}-text);line-height:1.7">
+        <div><strong>Tone:</strong> ${esc(s.tone)}</div>
+        <div><strong>Types:</strong> ${esc(s.types)}</div>
+        <div><strong>Action:</strong> ${esc(s.actions)}</div>
+        <div><strong>KI:</strong> ${esc(s.ki)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  /* ── Quick rules strip ── */
+  const quickRules = [
+    {icon:'ti-align-left',  col:'blue',   text:'Max 3 lines'},
+    {icon:'ti-mood-empty',  col:'red',    text:'No emojis'},
+    {icon:'ti-user-off',    col:'red',    text:'No names / "ji"'},
+    {icon:'ti-heart-off',   col:'red',    text:'No "sorry/maafi"'},
+    {icon:'ti-device-mobile',col:'green', text:'App only'},
+    {icon:'ti-robot',       col:'teal',   text:'System is final'},
+  ];
+  const stripHtml = quickRules.map(q=>`
+    <div style="display:flex;align-items:center;gap:6px;background:var(--${q.col}-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:7px 10px;flex:1;min-width:100px">
+      <i class="ti ${q.icon}" style="font-size:15px;color:var(--${q.col}-text);flex-shrink:0"></i>
+      <span style="font-size:12px;font-weight:500;color:var(--${q.col}-text)">${q.text}</span>
+    </div>`).join('');
+
+  /* ── Word bank ── */
+  const bannedPills  = r.bannedWords.map(w=>`<span style="background:var(--red-bg);color:var(--red-text);border-radius:20px;padding:3px 10px;font-size:12px;white-space:nowrap">❌ ${esc(w)}</span>`).join('');
+  const approvedPills= r.approvedWords.map(w=>`<span style="background:var(--green-bg);color:var(--green-text);border-radius:20px;padding:3px 10px;font-size:12px;white-space:nowrap">✅ ${esc(w)}</span>`).join('');
+
+  /* ── Forbidden phrases ── */
+  const fpRows = r.forbiddenPhrases.map(fp=>`
+    <div style="display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--border)">
+      <span style="color:var(--red);font-size:13px;flex-shrink:0">❌</span>
+      <span style="font-size:13px;color:var(--text)">${esc(fp.phrase)}</span>
+      ${fp.exception?`<span style="font-size:11px;color:var(--amber-text);flex-shrink:0;margin-left:auto">${esc(fp.exception)}</span>`:''}
+    </div>`).join('');
+
+  /* ── Style table ── */
+  const styleRows = r.styleTable.map(row=>`
+    <tr>
+      <td style="padding:7px 10px;font-size:12px;font-weight:500;color:var(--text);border-bottom:0.5px solid var(--border);width:22%">${esc(row.element)}</td>
+      <td style="padding:7px 10px;font-size:12px;color:var(--red-text);border-bottom:0.5px solid var(--border);width:39%;text-decoration:line-through;opacity:.8">${esc(row.old)}</td>
+      <td style="padding:7px 10px;font-size:12px;color:var(--green-text);font-weight:500;border-bottom:0.5px solid var(--border);width:39%">${esc(row.new_)}</td>
+    </tr>`).join('');
+
+  /* ── Complaint handling ── */
+  const complaintHtml = `
+    <div class="grid2" style="gap:8px">
+      <div style="border-radius:var(--r);border:0.5px solid var(--border);padding:10px 12px;background:var(--teal-bg)">
+        <div style="font-size:12px;font-weight:600;color:var(--teal-text);margin-bottom:6px;display:flex;gap:5px;align-items:center"><i class="ti ti-circle-check" style="font-size:14px"></i>Details available</div>
+        <ol style="padding-left:14px;font-size:12px;color:var(--teal-text);line-height:1.8;margin:0">
+          <li>Add details to KI ticket</li>
+          <li>RCA history → call via Ameyo</li>
+          <li>Send public acknowledgement</li>
+          <li>Send WIP email after call</li>
+          <li>Escalate if legal/safety risk</li>
+        </ol>
+      </div>
+      <div style="border-radius:var(--r);border:0.5px solid var(--border);padding:10px 12px;background:var(--amber-bg)">
+        <div style="font-size:12px;font-weight:600;color:var(--amber-text);margin-bottom:6px;display:flex;gap:5px;align-items:center"><i class="ti ti-help-circle" style="font-size:14px"></i>Details NOT available</div>
+        <ol style="padding-left:14px;font-size:12px;color:var(--amber-text);line-height:1.8;margin:0">
+          <li>Reply publicly / DM for details or form</li>
+          <li>Never post contact info publicly</li>
+          <li>After final attempt → note "No info"</li>
+          <li>Mark resolved; re-open if details arrive</li>
+        </ol>
+      </div>
+    </div>`;
+
+  /* ── Response templates (accordion) ── */
+  const catColors2 = {'Price / Plan confusion':'purple','Service / Technical':'red','Billing disputes':'amber','Support complaints':'blue'};
+  const catGroups  = {};
+  r.templates.forEach(t=>{ if(!catGroups[t.category]) catGroups[t.category]=[]; catGroups[t.category].push(t); });
+  const tmplAccordion = Object.entries(catGroups).map(([cat,items])=>{
+    const col = catColors2[cat]||'blue';
+    const items_html = items.map(t=>`
+      <div style="padding:8px 0;border-bottom:0.5px solid var(--border)">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">${esc(t.subcat)}</div>
+        <div style="background:var(--green-bg);border-left:3px solid var(--green);border-radius:0 4px 4px 0;padding:6px 10px;font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6">${esc(t.hinglish)}</div>
+        ${t.english?`<div style="background:var(--blue-bg);border-left:3px solid var(--blue);border-radius:0 4px 4px 0;padding:6px 10px;font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6;margin-top:4px">${esc(t.english)}</div>`:''}
+      </div>`).join('');
+    return `<details style="border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:6px">
+      <summary style="padding:9px 12px;cursor:pointer;font-size:13px;font-weight:500;color:var(--${col}-text);background:var(--${col}-bg);display:flex;align-items:center;gap:7px;list-style:none">
+        <i class="ti ti-message-2" style="font-size:14px"></i>${esc(cat)}
+        <i class="ti ti-chevron-down" style="font-size:12px;margin-left:auto;opacity:.6"></i>
+      </summary>
+      <div style="padding:0 12px">${items_html}</div>
+    </details>`;
+  }).join('');
+
+  /* ── Detailed rules (accordion) ── */
+  const rulesAccordion = r.rules.map(rule=>`
+    <details style="border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:6px">
+      <summary style="padding:9px 12px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text);background:var(--surface2);display:flex;align-items:center;gap:7px;list-style:none">
+        <i class="ti ti-list-details" style="font-size:14px;color:var(--text3)"></i>${esc(rule.title)}
+        <i class="ti ti-chevron-down" style="font-size:12px;margin-left:auto;opacity:.6;color:var(--text3)"></i>
+      </summary>
+      <ul style="margin:0;padding:8px 12px 10px 26px;display:flex;flex-direction:column;gap:5px">
+        ${rule.points.map(p=>`<li style="font-size:13px;color:var(--text2);line-height:1.6">${esc(p)}</li>`).join('')}
+      </ul>
+    </details>`).join('');
+
+  /* ── Assemble ── */
+  const panel = document.getElementById('sec-sentiment');
+  if(!panel) return;
+  panel.innerHTML = `
+    <!-- Sentiment cards -->
+    <div class="card" style="padding:12px 14px">
+      <div class="card-title" style="margin-bottom:10px"><i class="ti ti-mood-smile"></i>Respond by sentiment</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${sentCards}</div>
     </div>
-  `).join('');
+
+    <!-- Quick rules strip -->
+    <div class="card" style="padding:12px 14px">
+      <div class="card-title" style="margin-bottom:8px"><i class="ti ti-bolt"></i>Non-negotiable rules — every reply</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">${stripHtml}</div>
+    </div>
+
+    <!-- Word bank -->
+    <div class="card" style="padding:12px 14px">
+      <div class="card-title" style="margin-bottom:8px"><i class="ti ti-vocabulary"></i>Word bank</div>
+      <div style="font-size:11px;font-weight:600;color:var(--red-text);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Never say</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">${bannedPills}</div>
+      <div style="font-size:11px;font-weight:600;color:var(--green-text);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">Always use</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${approvedPills}</div>
+    </div>
+
+    <!-- Forbidden phrases -->
+    <div class="card" style="padding:12px 14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div class="card-title" style="margin-bottom:0"><i class="ti ti-ban"></i>Forbidden phrases</div>
+        <span style="font-size:11px;background:var(--red-bg);color:var(--red-text);padding:2px 8px;border-radius:20px;font-weight:500">Any one = quality failure</span>
+      </div>
+      ${fpRows}
+    </div>
+
+    <!-- Complaint handling -->
+    <div class="card" style="padding:12px 14px">
+      <div class="card-title" style="margin-bottom:10px"><i class="ti ti-git-branch"></i>Complaint handling</div>
+      ${complaintHtml}
+    </div>
+
+    <!-- Style change table -->
+    <details style="margin-bottom:8px">
+      <summary style="cursor:pointer;padding:10px 14px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);font-size:13px;font-weight:500;color:var(--text);display:flex;align-items:center;gap:7px;list-style:none">
+        <i class="ti ti-arrows-exchange" style="font-size:14px;color:var(--text3)"></i>Old vs new style
+        <i class="ti ti-chevron-down" style="font-size:12px;margin-left:auto;opacity:.6;color:var(--text3)"></i>
+      </summary>
+      <div style="border:0.5px solid var(--border);border-top:none;border-radius:0 0 var(--r) var(--r);overflow:hidden;background:var(--surface)">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:var(--surface2)">
+            <th style="padding:7px 10px;font-size:11px;font-weight:600;text-align:left;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--border);width:22%">Element</th>
+            <th style="padding:7px 10px;font-size:11px;font-weight:600;text-align:left;color:var(--red-text);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--border);width:39%">❌ Old</th>
+            <th style="padding:7px 10px;font-size:11px;font-weight:600;text-align:left;color:var(--green-text);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--border);width:39%">✅ New</th>
+          </tr></thead>
+          <tbody>${styleRows}</tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- Response templates -->
+    <div class="card" style="padding:12px 14px">
+      <div class="card-title" style="margin-bottom:10px"><i class="ti ti-message-2"></i>Response templates</div>
+      ${tmplAccordion}
+    </div>
+
+    <!-- Detailed rules -->
+    <div class="card" style="padding:12px 14px">
+      <div class="card-title" style="margin-bottom:10px"><i class="ti ti-list-details"></i>Detailed rules</div>
+      ${rulesAccordion}
+    </div>`;
 }
 
 /* ───── RENDER PLATFORMS ───── */
