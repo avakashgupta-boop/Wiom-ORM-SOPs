@@ -382,7 +382,6 @@ textarea{resize:vertical;line-height:1.7;min-height:120px}
     <button class="sec-tab" onclick="switchSec('templates')"><i class="ti ti-message"></i>Templates</button>
     <button class="sec-tab" onclick="switchSec('moderation')"><i class="ti ti-shield-check"></i>Moderation</button>
     <button class="sec-tab" onclick="switchSec('escalation')"><i class="ti ti-alert-triangle"></i>Escalation</button>
-    <button class="sec-tab" onclick="switchSec('platforms')"><i class="ti ti-world"></i>Platforms</button>
     <button class="sec-tab" onclick="switchSec('shift')"><i class="ti ti-clock"></i>Shift duties</button>
   </div>
 
@@ -392,6 +391,7 @@ textarea{resize:vertical;line-height:1.7;min-height:120px}
     <div id="overview-objective-card"></div>
     <div id="overview-process-card"></div>
     <div id="overview-tools-card"></div>
+    <div id="overview-platforms-card"></div>
   </div>
 
   <!-- ── TICKET FLOW ── -->
@@ -550,26 +550,6 @@ Kripya humein apna order number ya registered number DM karein — hum aapki sam
   </div>
 
   <!-- ── PLATFORMS ── -->
-  <div class="sec-panel" id="sec-platforms">
-    <div class="card">
-      <div class="card-title"><i class="ti ti-world"></i>Platforms &amp; monitoring methods</div>
-      <div id="platforms-list"></div>
-    </div>
-    <div class="card">
-      <div class="card-title"><i class="ti ti-tools"></i>Tools &amp; systems</div>
-      <table class="sop-table">
-        <thead><tr><th>Tool</th><th>Purpose</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Konnect Insight (KI)</strong></td><td>Central ORM dashboard — aggregates all mentions, reviews, DMs from all scoped platforms.</td></tr>
-          <tr><td><strong>WIOM HUB</strong></td><td>Customer details — name, device ID, data usage, billing cycle, address, partner, zone, technician contact.</td></tr>
-          <tr><td><strong>Lab App</strong></td><td>Feasibility check — use lat/long to verify if area is serviceable for installation or shifting requests.</td></tr>
-          <tr><td><strong>Ameyo (Dialer)</strong></td><td>All calls to customers and partners must be made through Ameyo. Never use personal numbers.</td></tr>
-          <tr><td><strong>Canned Responses</strong></td><td>Approved Hinglish draft templates — personalise before use, never send as-is.</td></tr>
-          <tr><td><strong>Slack — Cx_all</strong></td><td>End-of-day report channel. Highlight ongoing high-priority issues.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 
   <!-- ── SHIFT DUTIES ── -->
   <div class="sec-panel" id="sec-shift">
@@ -1368,14 +1348,35 @@ function renderSentiment(){
 /* ───── RENDER PLATFORMS ───── */
 function renderPlatforms(){
   const PLATFORMS = getContent().platforms || DEFAULT_CONTENT.platforms||[{icon:'ti-brand-facebook',name:'Facebook',detail:'DMs, comments, hashtags',type:'Social Media'},{icon:'ti-brand-instagram',name:'Instagram',detail:'DMs, comments, hashtags',type:'Social Media'},{icon:'ti-brand-x',name:'Twitter (X)',detail:'Mentions, DMs, hashtags',type:'Social Media'},{icon:'ti-brand-linkedin',name:'LinkedIn',detail:'Mentions, comments',type:'Social Media'},{icon:'ti-brand-youtube',name:'YouTube',detail:'Comments, mentions',type:'Social Media'},{icon:'ti-star',name:'Google Reviews',detail:'Ratings & reviews',type:'Review Platform'},{icon:'ti-device-mobile',name:'Play Store',detail:'App ratings & reviews',type:'Review Platform'},{icon:'ti-mail',name:'Gmail',detail:'Email integration — fetched as tickets',type:'Direct Channel'}];
-  document.getElementById('platforms-list').innerHTML = PLATFORMS.map(p=>`
+
+  const platformRows = PLATFORMS.map(p=>`
     <div class="platform-row">
       <i class="ti ${p.icon}" aria-hidden="true"></i>
       <div class="platform-name">${p.name}</div>
       <div class="platform-type">${p.detail}</div>
       <span class="badge ${p.type==='Social Media'?'b-blue':p.type==='Review Platform'?'b-amber':'b-teal'}">${p.type}</span>
+    </div>`).join('');
+
+  const container = document.getElementById('overview-platforms-card');
+  if(container) container.innerHTML = `
+    <div class="card">
+      <div class="card-title"><i class="ti ti-world"></i>Platforms &amp; monitoring methods</div>
+      <div>${platformRows}</div>
     </div>
-  `).join('');
+    <div class="card">
+      <div class="card-title"><i class="ti ti-tools"></i>Tools &amp; systems</div>
+      <table class="sop-table">
+        <thead><tr><th>Tool</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Konnect Insight (KI)</strong></td><td>Central ORM dashboard — aggregates all mentions, reviews, DMs from all scoped platforms.</td></tr>
+          <tr><td><strong>WIOM HUB</strong></td><td>Customer details — name, device ID, data usage, billing cycle, address, partner, zone, technician contact.</td></tr>
+          <tr><td><strong>Lab App</strong></td><td>Feasibility check — use lat/long to verify if area is serviceable for installation or shifting requests.</td></tr>
+          <tr><td><strong>Ameyo (Dialer)</strong></td><td>All calls to customers and partners must be made through Ameyo. Never use personal numbers.</td></tr>
+          <tr><td><strong>Canned Responses</strong></td><td>Approved Hinglish draft templates — personalise before use, never send as-is.</td></tr>
+          <tr><td><strong>Slack — Cx_all</strong></td><td>End-of-day report channel. Highlight ongoing high-priority issues.</td></tr>
+        </tbody>
+      </table>
+    </div>`;
 }
 
 /* ───── CUSTOM TEMPLATES ───── */
@@ -1939,6 +1940,7 @@ function renderOverviewContent(){
   </div>`;
 
   renderOverviewStats();
+  renderPlatforms();
 }
 
 function saveOverview(pLen, tLen){
