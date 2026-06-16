@@ -664,6 +664,7 @@ Kripya humein apna order number ya registered number DM karein — hum aapki sam
         <div class="mgr-panel-title"><i class="ti ti-phone-call"></i>Call centre scripts</div>
         <div class="sec-list">
           <div class="sec-item" id="msi-scripts" onclick="loadMgrTab('scripts')"><i class="ti ti-script"></i>Review scripts (preview)</div>
+          <div class="sec-item" id="msi-rules"   onclick="loadMgrTab('rules')"><i class="ti ti-clipboard-list"></i>Rules &amp; guidelines</div>
         </div>
       </div>
       <div class="mgr-panel">
@@ -1373,6 +1374,11 @@ function loadMgrTab(tab, silent){
   else if(tab==='scripts'){
     titleEl.textContent='Call Centre Scripts — Review';
     pane.innerHTML=renderScriptsPane();
+  }
+
+  else if(tab==='rules'){
+    titleEl.textContent='Rules & Guidelines';
+    pane.innerHTML=renderRulesPane();
   }
 
   else if(tab==='flow'){
@@ -2613,6 +2619,406 @@ function filterScripts(){
   } else {
     hint.style.display='none';
   }
+}
+
+/* ───── RULES & GUIDELINES ───── */
+const RULES_KEY = 'wiom_orm_rules_v1';
+
+const DEFAULT_RULES = {
+  styleTable: [
+    { element:'Greeting',    old:'"{User} ji"',                                    new_:'No names' },
+    { element:'Tone',        old:'Empathetic/Polite ("Sorry," "Thanks")',           new_:'Declarative / System-like' },
+    { element:'Length',      old:'Long paragraphs',                                 new_:'Max 3 lines' },
+    { element:'Visuals',     old:'Emojis (🙏, 🚀)',                                 new_:'No emojis' },
+    { element:'Support',     old:'Email / Phone / Forms',                           new_:'App Help Section Only' },
+    { element:'Promises',    old:'"We will resolve this quickly"',                  new_:'"App mein jo rules hain wahi final hain"' },
+    { element:'Modification',old:'Free text / personalisation allowed',             new_:'No free text allowed' },
+  ],
+  bannedWords: [
+    'Connection','Ghar Ka net','Bandwidth / ISP','Network fluctuate karega',
+    'Installation','Plan','Guaranteed speed','2 din free Milega','Wiom Net',
+  ],
+  approvedWords: [
+    'Net','Recharge wala Ghar ka net','Recharge-waala ghar ka net',
+    'Ruk-ruk ke chalna','Netbox lagana','No fixed plan',
+    '8–12 mobile, TV, aur laptop ek saath theek se chal sakta hai',
+    '2 din ka demo milega','Wiom',
+  ],
+  forbiddenPhrases: [
+    { phrase:'"Aapka feedback note kiya gaya hai"',         exception:'' },
+    { phrase:'"Hum jald hi…" / "We will…"',                exception:'' },
+    { phrase:'"Aapki baat samajh mein aayi"',              exception:'As per situation' },
+    { phrase:'"Sorry / maafi / inconvenience"',            exception:'' },
+    { phrase:'"Kripya" (politeness softens authority)',     exception:'As per situation' },
+    { phrase:'"Purane / pehle / earlier / removed"',       exception:'' },
+    { phrase:'"Please DM / call / email"',                 exception:'As per situation' },
+  ],
+  templates: [
+    { category:'Price / Plan confusion',   subcat:'₹20 per day confusing / expensive',
+      hinglish:'Wiom Pay-As-You-Go model par kaam karta hai.\nAap sirf un dinon ka pay karte hain jab aap Net use karte hain.\nDetails App ke Help section mein available hain.',
+      english:'' },
+    { category:'Price / Plan confusion',   subcat:'Old plan was better / bring it back',
+      hinglish:'Wiom Pay-As-You-Go model par kaam karta hai.\nYahi system hai.\nApp mein jo available hai wahi applicable hai.',
+      english:'' },
+    { category:'Service / Technical',      subcat:'Service issue / unresolved problem',
+      hinglish:'Service issues App ke Help section se raise karein.\nWahi official support channel hai.',
+      english:'' },
+    { category:'Service / Technical',      subcat:'Connection not working / slow',
+      hinglish:'Technical issues App ke Help section se report karein.\nSupport team wahan se handle karti hai.\nPhone support available nahi hai.',
+      english:'' },
+    { category:'Service / Technical',      subcat:'Rigid / unfair / no flexibility',
+      hinglish:'Wiom mein koi manual exception nahi hoti.\nSystem automated hai.\nApp mein jo rules hain wahi final hain.',
+      english:'' },
+    { category:'Service / Technical',      subcat:'Installation / connection kab tak lagega',
+      hinglish:'Yeh saari jankari booking ke waqt App mein clearly dikhti hai.\nSet-up date aur time aap App par apni suvidha ke hisaab se choose kar sakte hain.\nBooking se pehle koi timeline commit nahi hoti.',
+      english:'' },
+    { category:'Service / Technical',      subcat:'Highly escalated — customer very irritated',
+      hinglish:'Is asuvidha ke liye khed hai. Kripya apna registered mobile number humein talk2wiom@wiom.in par share karein, taaki hum details check kar saken.',
+      english:'We regret the inconvenience caused. Please share your registered mobile number with us at talk2wiom@wiom.in so the details can be checked.' },
+    { category:'Service / Technical',      subcat:'Vague low-rating ("Worst app", "Not good")',
+      hinglish:'Wiom App mein available system ke hisaab se kaam karta hai.\nSpecific issue ho toh App ke Help section use karein.',
+      english:'' },
+    { category:'Billing disputes',         subcat:'Billing / charged wrongly',
+      hinglish:'Billing App ke transaction history mein dikhai deta hai.\nDispute ho toh App ke Help section se raise karein.\nManual adjustments nahi hoti.',
+      english:'' },
+    { category:'Support complaints',       subcat:'Support not responding / call me',
+      hinglish:'Support App ke Help section mein hai.\nPhone calls available nahi hain.',
+      english:'' },
+  ],
+  rules: [
+    { title:'1. Tone and Politeness (Non-Negotiable Shift)',
+      points:[
+        'Remove all names: Stop using "{User} ji" or any personalised greetings.',
+        'Remove politeness: Phrases like "dhanyavaad," "khed hai," "maafi," "sincerely apologize," and even "Kripya" must be deleted.',
+        'Remove empathy: Do not use phrases like "humein khushi hai," "we understand," or "we\'re sorry to hear".',
+        'Sound like a system: The response should be declarative and factual, not a conversation.',
+      ] },
+    { title:'2. Structure and Formatting',
+      points:[
+        'Limit length: Every reply must be a maximum of 3 lines.',
+        'No emojis: Remove all emojis (🙏, 🚀, ⚡, 🤩, etc.).',
+        'No questions: Do not ask the customer questions (e.g., "Agar koi specific concern ho toh...?")',
+      ] },
+    { title:'3. Redirection and Contact Channels',
+      points:[
+        'Official channel only: We must only redirect to the App / Help section.',
+        'Remove external links: No email addresses (talk2wiom@wiom.in).',
+        'Remove phone numbers: No phone numbers (8880322222).',
+        'Remove external forms: No Google Forms links (https://forms.gle/...).',
+      ] },
+    { title:'4. Forbidden Content — Future and Past References',
+      points:[
+        'No "Future Speak": Stop promising that you "will" do something or that service is coming "soon".',
+        'No "Past Speak": Do not reference "old plans," "earlier" prices, or "removed" features.',
+        'No manual exceptions: Do not imply that support can fix things manually. State that the system is automated and rules are final.',
+      ] },
+  ],
+  mentalModel: [
+    { wrong:'Mbps first',          right:'Household experience first' },
+    { wrong:'English ISP language', right:'Hindi, ghar-centric' },
+    { wrong:'Same answer twice',    right:'Laddered response' },
+  ],
+};
+
+function getRules(){
+  try{ return JSON.parse(localStorage.getItem(RULES_KEY)) || DEFAULT_RULES; }
+  catch(e){ return DEFAULT_RULES; }
+}
+function saveRulesData(data){ localStorage.setItem(RULES_KEY, JSON.stringify(data)); }
+
+function renderRulesPane(){
+  const r = getRules();
+  const lastSaved = r._savedAt ? `<span style="font-size:12px;color:var(--text3)">Last saved: ${fmtDate(r._savedAt)}</span>` : '';
+
+  /* ── Style summary table ── */
+  const styleRows = r.styleTable.map((row,i)=>`
+    <tr id="sr-row-${i}">
+      <td style="padding:8px 10px;font-size:13px;font-weight:500;color:var(--text);border-bottom:0.5px solid var(--border)">${esc(row.element)}</td>
+      <td style="padding:8px 10px;font-size:13px;color:var(--red-text);border-bottom:0.5px solid var(--border)">${esc(row.old)}</td>
+      <td style="padding:8px 10px;font-size:13px;color:var(--green-text);border-bottom:0.5px solid var(--border)">${esc(row.new_)}</td>
+    </tr>`).join('');
+
+  /* ── Forbidden phrases ── */
+  const fpRows = r.forbiddenPhrases.map((fp,i)=>`
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <span style="color:var(--red);font-size:16px;flex-shrink:0;line-height:1.4">❌</span>
+      <div style="flex:1">
+        <div style="font-size:13px;color:var(--text)">${esc(fp.phrase)}</div>
+        ${fp.exception?`<div style="font-size:11px;color:var(--amber-text);margin-top:2px"><i class="ti ti-info-circle" style="font-size:11px"></i> Exception: ${esc(fp.exception)}</div>`:''}
+      </div>
+    </div>`).join('');
+
+  /* ── Templates ── */
+  const catGroups = {};
+  r.templates.forEach((t,i)=>{ t._i=i; if(!catGroups[t.category]) catGroups[t.category]=[]; catGroups[t.category].push(t); });
+  const catColors2 = {'Price / Plan confusion':'purple','Service / Technical':'red','Billing disputes':'amber','Support complaints':'blue'};
+  const tmplHtml = Object.entries(catGroups).map(([cat,items])=>{
+    const col = catColors2[cat]||'blue';
+    return `<div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--${col}-text);background:var(--${col}-bg);display:inline-block;padding:2px 8px;border-radius:20px;margin-bottom:8px">${esc(cat)}</div>
+      ${items.map(t=>`
+        <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:6px;background:var(--surface)">
+          <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px">${esc(t.subcat)}</div>
+          <div style="background:var(--green-bg);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;padding:7px 10px;${t.english?'margin-bottom:6px':''}">
+            <div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em">Hinglish</div>
+            <div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6">${esc(t.hinglish)}</div>
+          </div>
+          ${t.english?`<div style="background:var(--blue-bg);border-left:3px solid var(--blue);border-radius:0 var(--r) var(--r) 0;padding:7px 10px">
+            <div style="font-size:11px;font-weight:600;color:var(--blue-text);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em">English</div>
+            <div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6">${esc(t.english)}</div>
+          </div>`:''}
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+
+  /* ── Rules ── */
+  const rulesHtml = r.rules.map((rule,i)=>`
+    <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;background:var(--surface)">
+      <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:8px">${esc(rule.title)}</div>
+      <ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:5px">
+        ${rule.points.map(p=>`<li style="font-size:13px;color:var(--text2);line-height:1.6">${esc(p)}</li>`).join('')}
+      </ul>
+    </div>`).join('');
+
+  /* ── Mental model ── */
+  const mmHtml = r.mentalModel.map(m=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid var(--border)">
+      <div style="flex:1;font-size:13px;color:var(--red-text);text-decoration:line-through;opacity:.8">${esc(m.wrong)}</div>
+      <i class="ti ti-arrow-right" style="font-size:14px;color:var(--text3);flex-shrink:0"></i>
+      <div style="flex:1;font-size:13px;color:var(--green-text);font-weight:500">${esc(m.right)}</div>
+    </div>`).join('');
+
+  return `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;color:var(--text2)">Source: ORM Response Rule — New Launch 26 Jan 26 ${lastSaved}</div>
+      <button class="btn btn-primary btn-sm" onclick="openRulesEditor()"><i class="ti ti-pencil"></i> Edit rules</button>
+    </div>
+
+    <!-- Style summary -->
+    <div class="card" style="margin-bottom:0;padding:0;overflow:hidden">
+      <div style="padding:12px 14px;border-bottom:0.5px solid var(--border)">
+        <div class="card-title" style="margin-bottom:0"><i class="ti ti-arrows-exchange"></i>Response style — old vs new</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--surface2)">
+            <th style="padding:8px 10px;font-size:11px;font-weight:600;text-align:left;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--border);width:25%">Element</th>
+            <th style="padding:8px 10px;font-size:11px;font-weight:600;text-align:left;color:var(--red-text);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--border);width:37.5%">❌ Delete (old)</th>
+            <th style="padding:8px 10px;font-size:11px;font-weight:600;text-align:left;color:var(--green-text);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--border);width:37.5%">✅ Adopt (new)</th>
+          </tr>
+        </thead>
+        <tbody id="rules-style-tbody">${styleRows}</tbody>
+      </table>
+    </div>
+
+    <!-- Word bank -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title"><i class="ti ti-vocabulary"></i>Word bank</div>
+      <div class="grid2" style="gap:10px">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--red-text);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">❌ Never say</div>
+          <div id="rules-banned" style="display:flex;flex-direction:column;gap:4px">
+            ${r.bannedWords.map(w=>`<div style="background:var(--red-bg);border-radius:6px;padding:5px 10px;font-size:13px;color:var(--red-text)">${esc(w)}</div>`).join('')}
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--green-text);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">✅ Always say</div>
+          <div id="rules-approved" style="display:flex;flex-direction:column;gap:4px">
+            ${r.approvedWords.map(w=>`<div style="background:var(--green-bg);border-radius:6px;padding:5px 10px;font-size:13px;color:var(--green-text)">${esc(w)}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Forbidden phrases -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title"><i class="ti ti-ban"></i>Forbidden phrases — absolute no</div>
+      <div style="background:var(--red-bg);border-radius:var(--r);padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--red-text);font-weight:500">
+        Any one of these = hard failure on quality audit.
+      </div>
+      <div id="rules-forbidden">${fpRows}</div>
+    </div>
+
+    <!-- Mental model -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title"><i class="ti ti-brain"></i>Mental model shift</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <div style="font-size:11px;font-weight:600;color:var(--red-text);text-transform:uppercase;letter-spacing:.04em;flex:1">❌ Old thinking</div>
+        <div style="width:30px"></div>
+        <div style="font-size:11px;font-weight:600;color:var(--green-text);text-transform:uppercase;letter-spacing:.04em;flex:1">✅ New thinking</div>
+      </div>
+      <div id="rules-mental">${mmHtml}</div>
+    </div>
+
+    <!-- Response templates -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title"><i class="ti ti-message-2"></i>Response templates — by category</div>
+      <div id="rules-templates">${tmplHtml}</div>
+    </div>
+
+    <!-- Detailed rules -->
+    <div class="card" style="margin-top:12px">
+      <div class="card-title"><i class="ti ti-list-details"></i>Detailed rules</div>
+      <div id="rules-detail">${rulesHtml}</div>
+    </div>
+
+    <!-- Editor modal -->
+    <div id="rules-editor" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;overflow-y:auto;padding:24px">
+      <div style="max-width:700px;margin:0 auto;background:var(--surface);border-radius:var(--r);border:0.5px solid var(--border);overflow:hidden">
+        <div style="padding:14px 16px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:15px;font-weight:600;color:var(--text)"><i class="ti ti-pencil"></i> Edit Rules &amp; Guidelines</div>
+          <button onclick="closeRulesEditor()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text2)"><i class="ti ti-x"></i></button>
+        </div>
+        <div style="padding:16px" id="rules-editor-body"></div>
+        <div style="padding:14px 16px;border-top:0.5px solid var(--border);display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="saveRules()"><i class="ti ti-device-floppy"></i> Save all changes</button>
+          <button class="btn" onclick="closeRulesEditor()">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function openRulesEditor(){
+  const r = getRules();
+  const ed = document.getElementById('rules-editor-body');
+  if(!ed) return;
+
+  /* Style table editor */
+  const styleEdRows = r.styleTable.map((row,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px">
+      <input id="re-elem-${i}" value="${esc(row.element)}" placeholder="Element" style="font-size:12px;padding:5px 8px">
+      <input id="re-old-${i}"  value="${esc(row.old)}"     placeholder="Old style" style="font-size:12px;padding:5px 8px;border-color:var(--red)">
+      <input id="re-new-${i}"  value="${esc(row.new_)}"    placeholder="New style" style="font-size:12px;padding:5px 8px;border-color:var(--green)">
+    </div>`).join('');
+
+  /* Banned / approved word editors */
+  const bannedEd = r.bannedWords.map((w,i)=>`
+    <input id="re-ban-${i}" value="${esc(w)}" style="font-size:12px;padding:5px 8px;border-color:var(--red);margin-bottom:4px">`).join('');
+  const approvedEd = r.approvedWords.map((w,i)=>`
+    <input id="re-app-${i}" value="${esc(w)}" style="font-size:12px;padding:5px 8px;border-color:var(--green);margin-bottom:4px">`).join('');
+
+  /* Forbidden phrases editor */
+  const fpEd = r.forbiddenPhrases.map((fp,i)=>`
+    <div style="display:flex;gap:6px;margin-bottom:6px;align-items:flex-start">
+      <input id="re-fp-${i}"  value="${esc(fp.phrase)}"    placeholder="Phrase" style="font-size:12px;padding:5px 8px;flex:2;border-color:var(--red)">
+      <input id="re-fpe-${i}" value="${esc(fp.exception)}" placeholder="Exception (optional)" style="font-size:12px;padding:5px 8px;flex:1;border-color:var(--amber)">
+    </div>`).join('');
+
+  /* Templates editor */
+  const tmplEd = r.templates.map((t,i)=>`
+    <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:8px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+        <input id="re-tcat-${i}"  value="${esc(t.category)}" placeholder="Category" style="font-size:12px;padding:5px 8px">
+        <input id="re-tsub-${i}"  value="${esc(t.subcat)}"   placeholder="Sub-category" style="font-size:12px;padding:5px 8px">
+      </div>
+      <textarea id="re-thin-${i}" rows="3" placeholder="Hinglish script" style="font-size:12px;padding:6px 8px;resize:vertical;margin-bottom:4px;border-color:var(--green)">${esc(t.hinglish)}</textarea>
+      <textarea id="re-ten-${i}"  rows="2" placeholder="English (optional)" style="font-size:12px;padding:6px 8px;resize:vertical;border-color:var(--blue)">${esc(t.english)}</textarea>
+    </div>`).join('');
+
+  /* Rules editor */
+  const rulesEd = r.rules.map((rule,i)=>`
+    <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:8px">
+      <input id="re-rtitle-${i}" value="${esc(rule.title)}" style="font-size:13px;font-weight:500;padding:5px 8px;margin-bottom:6px">
+      <textarea id="re-rpoints-${i}" rows="4" placeholder="One rule per line" style="font-size:12px;padding:6px 8px;resize:vertical">${esc(rule.points.join('\n'))}</textarea>
+    </div>`).join('');
+
+  /* Mental model editor */
+  const mmEd = r.mentalModel.map((m,i)=>`
+    <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center">
+      <input id="re-mm-wrong-${i}" value="${esc(m.wrong)}" placeholder="Old thinking" style="font-size:12px;padding:5px 8px;flex:1;border-color:var(--red)">
+      <i class="ti ti-arrow-right" style="color:var(--text3)"></i>
+      <input id="re-mm-right-${i}" value="${esc(m.right)}" placeholder="New thinking" style="font-size:12px;padding:5px 8px;flex:1;border-color:var(--green)">
+    </div>`).join('');
+
+  ed.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:18px">
+
+      <div>
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:8px">Response style table <span style="font-weight:400;color:var(--text3)">(Element | Old | New)</span></div>
+        ${styleEdRows}
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--red-text);margin-bottom:6px">❌ Banned words (one per line)</div>
+        <div style="display:flex;flex-direction:column">${bannedEd}</div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--green-text);margin-bottom:6px">✅ Approved words (one per line)</div>
+        <div style="display:flex;flex-direction:column">${approvedEd}</div>
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:8px">Forbidden phrases <span style="font-weight:400">(phrase | exception)</span></div>
+        ${fpEd}
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:8px">Mental model shifts</div>
+        ${mmEd}
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:8px">Response templates</div>
+        ${tmplEd}
+      </div>
+
+      <div>
+        <div style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--text3);margin-bottom:8px">Detailed rules (one rule per line in each box)</div>
+        ${rulesEd}
+      </div>
+
+    </div>`;
+
+  document.getElementById('rules-editor').style.display='block';
+}
+
+function closeRulesEditor(){
+  document.getElementById('rules-editor').style.display='none';
+}
+
+function saveRules(){
+  const r = getRules();
+
+  r.styleTable = r.styleTable.map((_,i)=>({
+    element: document.getElementById(`re-elem-${i}`)?.value||'',
+    old:     document.getElementById(`re-old-${i}`)?.value||'',
+    new_:    document.getElementById(`re-new-${i}`)?.value||'',
+  }));
+
+  r.bannedWords   = r.bannedWords.map((_,i)=>document.getElementById(`re-ban-${i}`)?.value||'').filter(Boolean);
+  r.approvedWords = r.approvedWords.map((_,i)=>document.getElementById(`re-app-${i}`)?.value||'').filter(Boolean);
+
+  r.forbiddenPhrases = r.forbiddenPhrases.map((_,i)=>({
+    phrase:    document.getElementById(`re-fp-${i}`)?.value||'',
+    exception: document.getElementById(`re-fpe-${i}`)?.value||'',
+  })).filter(fp=>fp.phrase);
+
+  r.mentalModel = r.mentalModel.map((_,i)=>({
+    wrong: document.getElementById(`re-mm-wrong-${i}`)?.value||'',
+    right: document.getElementById(`re-mm-right-${i}`)?.value||'',
+  })).filter(m=>m.wrong||m.right);
+
+  r.templates = r.templates.map((_,i)=>({
+    category: document.getElementById(`re-tcat-${i}`)?.value||'',
+    subcat:   document.getElementById(`re-tsub-${i}`)?.value||'',
+    hinglish: document.getElementById(`re-thin-${i}`)?.value||'',
+    english:  document.getElementById(`re-ten-${i}`)?.value||'',
+  })).filter(t=>t.hinglish);
+
+  r.rules = r.rules.map((_,i)=>({
+    title:  document.getElementById(`re-rtitle-${i}`)?.value||'',
+    points: (document.getElementById(`re-rpoints-${i}`)?.value||'').split('\n').map(s=>s.trim()).filter(Boolean),
+  })).filter(ru=>ru.title);
+
+  r._savedAt = new Date().toISOString();
+  saveRulesData(r);
+  closeRulesEditor();
+
+  // Re-render the pane
+  const pane = document.getElementById('mgr-pane');
+  if(pane) pane.innerHTML = renderRulesPane();
+  toast('Rules & guidelines saved');
 }
 
 /* ───── INIT ───── */
