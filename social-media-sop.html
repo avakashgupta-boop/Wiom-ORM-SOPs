@@ -1018,7 +1018,7 @@ const FLOW_STEPS = [
   {n:1, title:'Monitor & Triage', sub:'Continuously monitor Konnect. Priority: Negative/Urgent > Neutral > Positive. Gmail from management = top priority.', status:'New / Unassigned', color:'b-red'},
   {n:2, title:'Categorise & Tag', sub:'Apply/verify Sentiment using Konnect\'s analysis. Categorise each mention with correct classification.', status:'Open / Assigned', color:'b-amber'},
   {n:3, title:'Kapture Ticket', sub:'Search for existing ticket. Create new if none. Reopen if incorrectly closed. Update notes if already open.', status:'Open / Assigned', color:'b-amber'},
-  {n:4, title:'First Response (FRT)', sub:'Send initial public reply or DM within 30 minutes. Use Hinglish templates — always personalise.', status:'WIP / Follow-only', color:'b-blue', highlight:true},
+  {n:4, title:'First Response (FRT)', sub:'__FRT_STEP__', status:'WIP / Follow-only', color:'b-blue', highlight:true},
   {n:5, title:'Complaint Handling', sub:'Details available: call customer, coordinate internally. Details NOT available: DM for details or share form link.', status:'Pending Info', color:'b-amber'},
   {n:6, title:'Resolution & Follow-up', sub:'Follow up with final solution on social channel after internal resolution is complete. TAT: 48 hours.', status:'Resolved', color:'b-green'},
   {n:7, title:'Final Closure', sub:'Close only when issue is fully solved. Last reply on customer comment must be from our team.', status:'Closed', color:'b-teal'},
@@ -1262,13 +1262,14 @@ function switchSec(id){
 
 /* ───── RENDER FLOW ───── */
 function renderFlow(){
+  const cfg = loadConfig();
   document.getElementById('flow-steps').innerHTML = FLOW_STEPS.map(s=>`
     <li class="step" style="${s.highlight?'border-color:var(--amber);background:var(--amber-bg)':''}">
       <div class="step-num" style="${s.highlight?'background:var(--amber-bg);color:var(--amber-text)':''}">${s.n}</div>
       <div class="step-body">
         <div class="step-title" style="${s.highlight?'color:var(--amber-text)':''}">${s.title}</div>
-        <div class="step-sub">${s.sub}</div>
-        <div class="step-meta"><span class="badge ${s.color}">${s.status}</span>${s.highlight?'<span class="badge b-red">⏱ Strict 30-min target</span>':''}</div>
+        <div class="step-sub">${s.sub==='__FRT_STEP__'?`Send initial public reply or DM within <strong>${esc(cfg.frt)}</strong>. Use Hinglish templates — always personalise.`:s.sub}</div>
+        <div class="step-meta"><span class="badge ${s.color}">${s.status}</span>${s.highlight?`<span class="badge b-red">⏱ Strict ${esc(cfg.frt)} target</span>`:''}</div>
       </div>
     </li>
   `).join('');
@@ -1435,6 +1436,8 @@ function saveConfig(){
   localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
   renderTimerBar();
   renderMetricsTable();
+  renderFlow();
+  renderOverviewStats();
   toast('SLA targets updated — agent view refreshed');
 }
 
