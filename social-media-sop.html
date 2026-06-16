@@ -2252,41 +2252,228 @@ const CALL_SCRIPTS = [
     comments:'If date not given but >2 days from booking confirmed and no active interest = delay. If date given and date breached and booking still with partner = delay.' },
 ];
 
-function renderScriptsPane(){
-  // Group by category
-  const groups = {};
-  CALL_SCRIPTS.forEach(s=>{ if(!groups[s.cat]) groups[s.cat]=[]; groups[s.cat].push(s); });
+/* ── Script storage ── */
+const SCRIPTS_KEY = 'wiom_orm_scripts_v1';
 
-  const catColors = {
-    'What is Wiom':'blue','Speed, Range & Devices':'teal','Installation Timeline':'amber',
-    'Recharge & Pricing':'purple','Booking Process & Charges':'green','The App':'blue',
-    'Undecided Customer':'amber','New Connection':'teal','Other (Out of Scope)':'red',
-    'Post-Booking & Installation Issues':'red','Late Installation & Refunds':'red'
+function getScripts(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(SCRIPTS_KEY)||'[]');
+    return CALL_SCRIPTS.map((base,i)=> stored[i] ? Object.assign({},base,stored[i]) : {...base});
+  }catch(e){ return CALL_SCRIPTS.map(s=>({...s})); }
+}
+
+function persistScripts(arr){
+  const overrides = arr.map((s,i)=>{
+    const base = CALL_SCRIPTS[i];
+    const diff = {};
+    ['q','queue','r1','r2','latest','comments','updatedAt','prevScript','prevR2'].forEach(k=>{
+      if(s[k]!==undefined && s[k]!==base[k]) diff[k]=s[k];
+    });
+    return diff;
+  });
+  localStorage.setItem(SCRIPTS_KEY, JSON.stringify(overrides));
+}
+
+function fmtDate(iso){
+  if(!iso) return '';
+  const d=new Date(iso);
+  return d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'});
+}
+
+const CAT_COLORS = {
+  'What is Wiom':'blue','Speed, Range & Devices':'teal','Installation Timeline':'amber',
+  'Recharge & Pricing':'purple','Booking Process & Charges':'green','The App':'blue',
+  'Undecided Customer':'amber','New Connection':'teal','Other (Out of Scope)':'red',
+  'Post-Booking & Installation Issues':'red','Late Installation & Refunds':'red'
+};
+
+function buildScriptCardHtml(s, i, editMode){
+  const latest   = s.latest || s.new10 || s.newR || s.r1;
+  const r2       = s.r2 || '';
+  const comments = s.comments || '';
+  const prevScript= s.prevScript || (s.updatedAt && s.r1 !== latest ? s.r1 : '');
+  const prevR2   = s.prevR2 || '';
+
+  const fromCsv     = !s.updatedAt && (s.new10||s.newR);
+  const managerEdit = !!s.updatedAt;
+  const isUpdated   = fromCsv || managerEdit;
+
+  const updateLabel = managerEdit
+    ? `Edited ${fmtDate(s.updatedAt)}`
+    : s.new10 ? '10 Jun update' : s.newR ? '3 Jun update' : '';
+
+  const queueColor  = s.queue.includes('Status') ? 'teal' : 'blue';
+  const searchText  = (s.cat+' '+s.q+' '+latest+' '+comments).toLowerCase();
+
+  if(editMode){
+    return `<div class="script-card" id="sc-${i}" data-text="${esc(searchText)}"
+      style="border:2px solid var(--blue);border-radius:var(--r);padding:14px;margin-bottom:8px;background:var(--surface)">
+
+      <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:10px;display:flex;align-items:center;gap:6px">
+        <i class="ti ti-pencil"></i> Editing script
+      </div>
+
+      <label style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Customer question</label>
+      <input id="se-q-${i}" value="${esc(s.q)}" style="font-size:13px;padding:7px 10px;margin-bottom:10px">
+
+      <label style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Queue type</label>
+      <input id="se-queue-${i}" value="${esc(s.queue)}" style="font-size:13px;padding:7px 10px;margin-bottom:10px">
+
+      <label style="font-size:11px;color:var(--green-text);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Script (latest — what agent will see)</label>
+      <textarea id="se-latest-${i}" rows="5" style="font-size:13px;padding:8px 10px;margin-bottom:10px;resize:vertical;border-color:var(--green)">${esc(latest)}</textarea>
+
+      <label style="font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em">2nd response / follow-up (optional)</label>
+      <textarea id="se-r2-${i}" rows="3" style="font-size:13px;padding:8px 10px;margin-bottom:10px;resize:vertical">${esc(r2)}</textarea>
+
+      <label style="font-size:11px;color:var(--amber-text);font-weight:600;text-transform:uppercase;letter-spacing:.04em">Internal note / open question (manager only)</label>
+      <textarea id="se-comments-${i}" rows="2" style="font-size:13px;padding:8px 10px;margin-bottom:12px;resize:vertical;border-color:var(--amber)">${esc(comments)}</textarea>
+
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="saveScript(${i})"><i class="ti ti-device-floppy"></i> Save</button>
+        <button class="btn btn-sm" onclick="renderScriptCard(${i})"><i class="ti ti-x"></i> Cancel</button>
+      </div>
+    </div>`;
+  }
+
+  const hasPrev = prevScript && prevScript !== latest;
+
+  return `<div class="script-card" id="sc-${i}" data-text="${esc(searchText)}"
+    style="border:0.5px solid ${managerEdit?'var(--blue)':'var(--border)'};border-radius:var(--r);padding:12px 14px;margin-bottom:8px;background:var(--surface)">
+
+    <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
+      <span style="background:var(--${queueColor}-bg);color:var(--${queueColor}-text);font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;flex-shrink:0">${esc(s.queue)}</span>
+      ${isUpdated?`<span style="background:${managerEdit?'var(--blue-bg)':'var(--green-bg)'};color:${managerEdit?'var(--blue-text)':'var(--green-text)'};font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;flex-shrink:0;display:flex;align-items:center;gap:3px">
+        <i class="ti ti-${managerEdit?'pencil':'refresh'}" style="font-size:10px"></i> ${updateLabel}
+      </span>`:''}
+      <div style="font-size:13px;font-weight:500;color:var(--text);flex:1">${esc(s.q)}</div>
+      <button onclick="editScript(${i})" style="background:none;border:0.5px solid var(--border);border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;flex-shrink:0;white-space:nowrap">
+        <i class="ti ti-pencil" style="font-size:12px"></i> Edit
+      </button>
+    </div>
+
+    <div style="background:var(--green-bg);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;padding:8px 10px;margin-bottom:${(r2||hasPrev||comments)?'8px':'0'}">
+      <div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;display:flex;justify-content:space-between">
+        <span>${isUpdated?'Latest script':'Script'}</span>
+        ${managerEdit?`<span style="font-weight:400;opacity:.8">Saved ${fmtDate(s.updatedAt)}</span>`:''}
+      </div>
+      <div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6">${esc(latest)}</div>
+    </div>
+
+    ${r2?`<div style="background:var(--surface2);border-left:3px solid var(--border2);border-radius:0 var(--r) var(--r) 0;padding:8px 10px;margin-bottom:${(hasPrev||comments)?'8px':'0'}">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">2nd response / follow-up</div>
+      <div style="font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.6">${esc(r2)}</div>
+    </div>`:''}
+
+    ${hasPrev?`<details style="margin-bottom:${comments?'8px':'0'}">
+      <summary style="font-size:11px;color:var(--text3);cursor:pointer;padding:4px 0;list-style:none;display:flex;align-items:center;gap:4px">
+        <i class="ti ti-history" style="font-size:12px"></i> Previous script (before this edit)
+      </summary>
+      <div style="background:var(--surface2);border-left:3px solid var(--border);border-radius:0 var(--r) var(--r) 0;padding:8px 10px;margin-top:6px;font-size:13px;color:var(--text3);white-space:pre-wrap;line-height:1.6;opacity:.7;text-decoration:line-through">${esc(prevScript)}</div>
+      ${prevR2?`<div style="background:var(--surface2);border-left:3px solid var(--border);border-radius:0 var(--r) var(--r) 0;padding:8px 10px;margin-top:4px;font-size:12px;color:var(--text3);white-space:pre-wrap;line-height:1.5;opacity:.6;text-decoration:line-through">Follow-up: ${esc(prevR2)}</div>`:''}
+    </details>`:''}
+
+    ${comments?`<div style="background:var(--amber-bg);border-left:3px solid var(--amber);border-radius:0 var(--r) var(--r) 0;padding:8px 10px">
+      <div style="font-size:11px;font-weight:600;color:var(--amber-text);margin-bottom:4px;display:flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:.04em">
+        <i class="ti ti-alert-triangle" style="font-size:12px"></i> Manager note
+      </div>
+      <div style="font-size:12px;color:var(--amber-text);line-height:1.5">${esc(comments)}</div>
+    </div>`:''}
+  </div>`;
+}
+
+function renderScriptCard(i, editMode=false){
+  const scripts = getScripts();
+  const el = document.getElementById(`sc-${i}`);
+  if(el) el.outerHTML = buildScriptCardHtml(scripts[i], i, editMode);
+}
+
+function editScript(i){ renderScriptCard(i, true); }
+
+function saveScript(i){
+  const scripts = getScripts();
+  const s = scripts[i];
+  const newLatest  = document.getElementById(`se-latest-${i}`)?.value.trim()  || '';
+  const newR2      = document.getElementById(`se-r2-${i}`)?.value.trim()       || '';
+  const newQ       = document.getElementById(`se-q-${i}`)?.value.trim()        || s.q;
+  const newQueue   = document.getElementById(`se-queue-${i}`)?.value.trim()    || s.queue;
+  const newComment = document.getElementById(`se-comments-${i}`)?.value.trim() || '';
+
+  const oldLatest = s.latest || s.new10 || s.newR || s.r1;
+  const oldR2     = s.r2 || '';
+
+  if(newLatest === oldLatest && newR2 === oldR2 && newQ === s.q && newQueue === s.queue && newComment === (s.comments||'')){
+    renderScriptCard(i); return;
+  }
+
+  scripts[i] = {
+    ...s,
+    q: newQ,
+    queue: newQueue,
+    latest:    newLatest,
+    r2:        newR2,
+    comments:  newComment,
+    prevScript: oldLatest !== newLatest ? oldLatest : (s.prevScript||''),
+    prevR2:     oldR2     !== newR2     ? oldR2     : (s.prevR2||''),
+    updatedAt:  new Date().toISOString(),
   };
 
-  const totalEntries = CALL_SCRIPTS.length;
-  const updatedEntries = CALL_SCRIPTS.filter(s=>s.new10||s.newR).length;
-  const openComments = CALL_SCRIPTS.filter(s=>s.comments).length;
+  persistScripts(scripts);
+  renderScriptCard(i);
+  refreshScriptStats();
+  toast('Script saved');
+}
+
+function refreshScriptStats(){
+  const scripts = getScripts();
+  const edited   = scripts.filter(s=>s.updatedAt).length;
+  const csvUpd   = scripts.filter(s=>!s.updatedAt&&(s.new10||s.newR)).length;
+  const comments = scripts.filter(s=>s.comments).length;
+  const elE = document.getElementById('stat-updated');
+  const elC = document.getElementById('stat-comments');
+  if(elE) elE.textContent = edited + csvUpd;
+  if(elC) elC.textContent = comments;
+}
+
+function renderScriptsPane(){
+  const scripts = getScripts();
+
+  const groups = {};
+  scripts.forEach((s,i)=>{
+    s._idx = i;
+    if(!groups[s.cat]) groups[s.cat]=[];
+    groups[s.cat].push(s);
+  });
+
+  const total    = scripts.length;
+  const updated  = scripts.filter(s=>s.updatedAt||(s.new10||s.newR)).length;
+  const comments = scripts.filter(s=>s.comments).length;
 
   let html = `
     <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-      <div style="flex:1;min-width:100px;background:var(--blue-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px">
-        <div style="font-size:22px;font-weight:500;color:var(--blue-text)">${totalEntries}</div>
+      <div style="flex:1;min-width:90px;background:var(--blue-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px">
+        <div style="font-size:22px;font-weight:500;color:var(--blue-text)">${total}</div>
         <div style="font-size:12px;color:var(--blue-text);opacity:.8">Total scripts</div>
       </div>
-      <div style="flex:1;min-width:100px;background:var(--green-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px">
-        <div style="font-size:22px;font-weight:500;color:var(--green-text)">${updatedEntries}</div>
+      <div style="flex:1;min-width:90px;background:var(--green-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px">
+        <div style="font-size:22px;font-weight:500;color:var(--green-text)" id="stat-updated">${updated}</div>
         <div style="font-size:12px;color:var(--green-text);opacity:.8">Updated scripts</div>
       </div>
-      <div style="flex:1;min-width:100px;background:var(--amber-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px">
-        <div style="font-size:22px;font-weight:500;color:var(--amber-text)">${openComments}</div>
-        <div style="font-size:12px;color:var(--amber-text);opacity:.8">Open questions</div>
+      <div style="flex:1;min-width:90px;background:var(--amber-bg);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px">
+        <div style="font-size:22px;font-weight:500;color:var(--amber-text)" id="stat-comments">${comments}</div>
+        <div style="font-size:12px;color:var(--amber-text);opacity:.8">Manager notes</div>
       </div>
     </div>
 
-    <div style="background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:16px;font-size:13px;color:var(--text2);display:flex;align-items:flex-start;gap:8px">
+    <div style="background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:10px 12px;margin-bottom:12px;font-size:13px;color:var(--text2);display:flex;align-items:flex-start;gap:8px">
       <i class="ti ti-info-circle" style="color:var(--blue);font-size:15px;flex-shrink:0;margin-top:1px"></i>
-      <span>This is a <strong style="color:var(--text)">manager-only preview</strong> of all call centre scripts from the uploaded file. Review each entry. Once you approve, click <strong style="color:var(--text)">"Publish to Agent View"</strong> (coming next) to make them visible to agents.</span>
+      <div>
+        <strong style="color:var(--text)">Manager-only view.</strong> Click <strong style="color:var(--text)">Edit</strong> on any script to update it — agents will always see the latest saved version. Edits are date-stamped and the previous version is kept below for reference.
+        <div style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:4px;font-size:12px"><span style="width:10px;height:10px;border-radius:2px;background:var(--green-bg);border:1px solid var(--green);display:inline-block"></span> Current script</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:12px"><span style="width:10px;height:10px;border-radius:2px;background:var(--blue-bg);border:1px solid var(--blue);display:inline-block"></span> Manager edit</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:12px"><span style="width:10px;height:10px;border-radius:2px;background:var(--amber-bg);border:1px solid var(--amber);display:inline-block"></span> Internal note</span>
+        </div>
+      </div>
     </div>
 
     <div style="margin-bottom:12px">
@@ -2296,53 +2483,15 @@ function renderScriptsPane(){
     <div id="scripts-list">`;
 
   Object.entries(groups).forEach(([cat, entries])=>{
-    const col = catColors[cat] || 'blue';
-    html += `
-      <div class="script-group" data-cat="${esc(cat)}">
-        <div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px">
-          <div style="height:1px;background:var(--border);flex:0 0 8px"></div>
-          <span style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--${col}-text);background:var(--${col}-bg);padding:2px 8px;border-radius:20px;white-space:nowrap">${esc(cat)}</span>
-          <div style="height:1px;background:var(--border);flex:1"></div>
-          <span style="font-size:11px;color:var(--text3)">${entries.length} scripts</span>
-        </div>`;
-
-    entries.forEach((s,idx)=>{
-      const latest = s.new10 || s.newR || s.r1;
-      const isUpdated = !!(s.new10 || s.newR);
-      const updateLabel = s.new10 ? '10 Jun update' : s.newR ? '3 Jun update' : '';
-      const hasOldScript = isUpdated && s.r1;
-      const queueColor = s.queue.includes('Status') ? 'teal' : 'blue';
-
-      html += `
-        <div class="script-card" data-text="${esc((s.cat+' '+s.q+' '+latest).toLowerCase())}" style="border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;background:var(--surface)">
-          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">
-            <span style="background:var(--${queueColor}-bg);color:var(--${queueColor}-text);font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;flex-shrink:0;margin-top:1px">${esc(s.queue)}</span>
-            ${isUpdated?`<span style="background:var(--green-bg);color:var(--green-text);font-size:11px;font-weight:500;padding:2px 7px;border-radius:20px;flex-shrink:0;margin-top:1px"><i class="ti ti-refresh" style="font-size:10px"></i> ${updateLabel}</span>`:''}
-            <div style="font-size:13px;font-weight:500;color:var(--text);flex:1">${esc(s.q)}</div>
-          </div>
-
-          <div style="background:var(--green-bg);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;padding:8px 10px;margin-bottom:${(hasOldScript||s.r2||s.comments)?'8px':'0'}">
-            <div style="font-size:11px;font-weight:600;color:var(--green-text);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">${isUpdated?'Latest script':'Script'}</div>
-            <div style="font-size:13px;color:var(--text);white-space:pre-wrap;line-height:1.6">${esc(latest)}</div>
-          </div>
-
-          ${s.r2?`<div style="background:var(--surface2);border-left:3px solid var(--border2);border-radius:0 var(--r) var(--r) 0;padding:8px 10px;margin-bottom:${(hasOldScript||s.comments)?'8px':'0'}">
-            <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">2nd response / follow-up</div>
-            <div style="font-size:13px;color:var(--text2);white-space:pre-wrap;line-height:1.6">${esc(s.r2)}</div>
-          </div>`:''}
-
-          ${hasOldScript?`<details style="margin-bottom:${s.comments?'8px':'0'}">
-            <summary style="font-size:11px;color:var(--text3);cursor:pointer;padding:4px 0">Previous script (before update)</summary>
-            <div style="background:var(--surface2);border-left:3px solid var(--border);border-radius:0 var(--r) var(--r) 0;padding:8px 10px;margin-top:6px;font-size:13px;color:var(--text3);white-space:pre-wrap;line-height:1.6;text-decoration:line-through;opacity:.7">${esc(s.r1)}</div>
-          </details>`:''}
-
-          ${s.comments?`<div style="background:var(--amber-bg);border-left:3px solid var(--amber);border-radius:0 var(--r) var(--r) 0;padding:8px 10px">
-            <div style="font-size:11px;font-weight:600;color:var(--amber-text);margin-bottom:4px;display:flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:.04em"><i class="ti ti-alert-triangle" style="font-size:12px"></i> Open question / note</div>
-            <div style="font-size:12px;color:var(--amber-text);line-height:1.5">${esc(s.comments)}</div>
-          </div>`:''}
-        </div>`;
-    });
-
+    const col = CAT_COLORS[cat] || 'blue';
+    html += `<div class="script-group" data-cat="${esc(cat)}">
+      <div style="display:flex;align-items:center;gap:8px;margin:16px 0 8px">
+        <div style="height:1px;background:var(--border);flex:0 0 8px"></div>
+        <span style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--${col}-text);background:var(--${col}-bg);padding:2px 8px;border-radius:20px;white-space:nowrap">${esc(cat)}</span>
+        <div style="height:1px;background:var(--border);flex:1"></div>
+        <span style="font-size:11px;color:var(--text3)">${entries.length} scripts</span>
+      </div>`;
+    entries.forEach(s=>{ html += buildScriptCardHtml(s, s._idx, false); });
     html += `</div>`;
   });
 
@@ -2353,12 +2502,11 @@ function renderScriptsPane(){
 function filterScripts(){
   const q = document.getElementById('script-search')?.value.toLowerCase()||'';
   document.querySelectorAll('.script-card').forEach(card=>{
-    const match = !q || card.dataset.text.includes(q);
-    card.style.display = match?'':'none';
+    card.style.display = (!q||card.dataset.text.includes(q)) ? '' : 'none';
   });
   document.querySelectorAll('.script-group').forEach(grp=>{
-    const visible = [...grp.querySelectorAll('.script-card')].some(c=>c.style.display!=='none');
-    grp.style.display = visible?'':'none';
+    const vis = [...grp.querySelectorAll('.script-card')].some(c=>c.style.display!=='none');
+    grp.style.display = vis ? '' : 'none';
   });
 }
 
