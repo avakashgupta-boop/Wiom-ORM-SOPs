@@ -388,171 +388,10 @@ textarea{resize:vertical;line-height:1.7;min-height:120px}
 
   <!-- ── OVERVIEW ── -->
   <div class="sec-panel" id="sec-overview">
-
-    <!-- Video -->
-    <div class="card">
-      <div class="card-title"><i class="ti ti-player-play"></i>Process training video</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Watch this before you start. Covers the full ORM workflow on Konnect Insight.</div>
-      <div style="background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;">
-        <iframe
-          src="https://drive.google.com/file/d/1lL447cdNwL5SfZUq2ztOfD7YUzo1A666/preview"
-          style="width:100%;height:100%;border:none;position:absolute;top:0;left:0"
-          allow="autoplay"
-          allowfullscreen>
-        </iframe>
-      </div>
-      <div style="margin-top:10px">
-        <a href="https://drive.google.com/file/d/1lL447cdNwL5SfZUq2ztOfD7YUzo1A666/view?usp=drive_link" target="_blank" class="btn btn-sm"><i class="ti ti-external-link"></i> Open video in new tab</a>
-      </div>
-    </div>
-
-    <!-- Objective -->
-    <div class="card">
-      <div class="card-title"><i class="ti ti-target"></i>What is this process about?</div>
-      <p style="font-size:14px;color:var(--text2);margin-bottom:1rem;line-height:1.8">
-        This SOP governs how the Wiom ORM team <strong style="color:var(--text)">monitors, responds to, and resolves</strong> every customer mention, complaint, review, and direct message across all social media platforms — through a single unified dashboard called <strong style="color:var(--text)">Konnect Insight</strong>.
-      </p>
-      <div class="grid3" style="margin-bottom:0">
-        <div style="background:var(--red-bg);border-radius:var(--r);padding:12px 14px;border:0.5px solid var(--border)">
-          <div style="font-size:13px;font-weight:500;color:var(--red-text);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-clock" style="font-size:15px"></i>FRT goal</div>
-          <div style="font-size:22px;font-weight:500;color:var(--red-text)" id="ov-frt">15 min</div>
-          <div style="font-size:12px;color:var(--red-text);opacity:.8">First reply during business hours</div>
-        </div>
-        <div style="background:var(--blue-bg);border-radius:var(--r);padding:12px 14px;border:0.5px solid var(--border)">
-          <div style="font-size:13px;font-weight:500;color:var(--blue-text);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-check" style="font-size:15px"></i>TAT goal</div>
-          <div style="font-size:22px;font-weight:500;color:var(--blue-text)" id="ov-tat">48 hrs</div>
-          <div style="font-size:12px;color:var(--blue-text);opacity:.8">Full resolution turnaround</div>
-        </div>
-        <div style="background:var(--teal-bg);border-radius:var(--r);padding:12px 14px;border:0.5px solid var(--border)">
-          <div style="font-size:13px;font-weight:500;color:var(--teal-text);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-sun" style="font-size:15px"></i>Business hours</div>
-          <div style="font-size:16px;font-weight:500;color:var(--teal-text)" id="ov-hours">10 am – 7:30 pm</div>
-          <div style="font-size:12px;color:var(--teal-text);opacity:.8">Mon – Sun</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Process flow summary -->
-    <div class="card">
-      <div class="card-title"><i class="ti ti-route"></i>How the process works — at a glance</div>
-      <div style="display:flex;flex-direction:column;gap:0">
-
-        <div style="display:flex;gap:0;align-items:stretch">
-          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--blue-bg);color:var(--blue-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">1</div>
-            <div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>
-          </div>
-          <div style="padding-bottom:16px">
-            <div style="font-size:14px;font-weight:500;margin-bottom:2px">Mention comes in</div>
-            <div style="font-size:13px;color:var(--text2)">A customer posts on Facebook, Instagram, Twitter, LinkedIn, YouTube, Google Reviews, Play Store, or sends a Gmail. Konnect Insight pulls it in automatically as a ticket.</div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:0;align-items:stretch">
-          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--amber-bg);color:var(--amber-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">2</div>
-            <div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>
-          </div>
-          <div style="padding-bottom:16px">
-            <div style="font-size:14px;font-weight:500;margin-bottom:2px">Agent triages &amp; categorises</div>
-            <div style="font-size:13px;color:var(--text2)">The agent checks sentiment (Negative / Neutral / Positive), assigns the right category (Complaint, Request, Enquiry, Feedback), and creates or links a Kapture ticket.</div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:0;align-items:stretch">
-          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--red-bg);color:var(--red-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">3</div>
-            <div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>
-          </div>
-          <div style="padding-bottom:16px">
-            <div style="font-size:14px;font-weight:500;margin-bottom:2px">First response within FRT window</div>
-            <div style="font-size:13px;color:var(--text2)">A personalised Hinglish reply goes out publicly or via DM within the FRT target. If customer details are missing, we ask them to share privately or fill the form.</div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:0;align-items:stretch">
-          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--purple-bg);color:var(--purple-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">4</div>
-            <div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>
-          </div>
-          <div style="padding-bottom:16px">
-            <div style="font-size:14px;font-weight:500;margin-bottom:2px">Internal resolution</div>
-            <div style="font-size:13px;color:var(--text2)">Agent calls the customer via Ameyo, coordinates with the internal partner/team, and tracks progress. WIOM HUB is used to look up account details. Lab App checks feasibility for installation/shifting issues.</div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:0;align-items:stretch">
-          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--green-bg);color:var(--green-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">5</div>
-            <div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>
-          </div>
-          <div style="padding-bottom:16px">
-            <div style="font-size:14px;font-weight:500;margin-bottom:2px">Follow-up &amp; closure</div>
-            <div style="font-size:13px;color:var(--text2)">Once resolved, the agent posts the final solution on the social channel. Last reply must always be from our team. Ticket is closed with a closure note. Kapture ticket ID is logged in KI notes.</div>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:0;align-items:flex-start">
-          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
-            <div style="width:32px;height:32px;border-radius:50%;background:var(--teal-bg);color:var(--teal-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">6</div>
-          </div>
-          <div style="padding-bottom:4px">
-            <div style="font-size:14px;font-weight:500;margin-bottom:2px">EOD report</div>
-            <div style="font-size:13px;color:var(--text2)">At shift end, the agent resets their queue in KI and shares a summary report in the Slack channel <strong style="color:var(--text)">Cx_all</strong> — tickets received, resolved, escalated, and any ongoing high-priority issues.</div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- Quick links -->
-    <div class="card">
-      <div class="card-title"><i class="ti ti-link"></i>Quick access — all tools</div>
-      <div class="grid2" style="gap:8px">
-        <a href="https://cx.konnectinsights.com/" target="_blank" style="text-decoration:none">
-          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-            <i class="ti ti-topology-star-3" style="font-size:20px;color:var(--blue)"></i>
-            <div><div class="platform-name">Konnect Insight (KI)</div><div class="platform-type">Main ORM dashboard</div></div>
-            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
-          </div>
-        </a>
-        <a href="https://hub.i2e1.in/login" target="_blank" style="text-decoration:none">
-          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-            <i class="ti ti-database" style="font-size:20px;color:var(--purple)"></i>
-            <div><div class="platform-name">WIOM HUB</div><div class="platform-type">Customer account details</div></div>
-            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
-          </div>
-        </a>
-        <a href="https://labs-api.wiom.in/" target="_blank" style="text-decoration:none">
-          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-            <i class="ti ti-map-pin" style="font-size:20px;color:var(--teal)"></i>
-            <div><div class="platform-name">Lab App</div><div class="platform-type">Feasibility check (lat/long)</div></div>
-            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
-          </div>
-        </a>
-        <a href="https://app13.ameyoemerge.in:7443/app/" target="_blank" style="text-decoration:none">
-          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-            <i class="ti ti-phone-call" style="font-size:20px;color:var(--green)"></i>
-            <div><div class="platform-name">Ameyo Dialer</div><div class="platform-type">All customer &amp; partner calls</div></div>
-            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
-          </div>
-        </a>
-        <a href="https://docs.google.com/spreadsheets/d/1Nub5E6_as7MdduwSYuXXy_Vydw1Qxo95dLZqxP2R1TE/edit?resourcekey=&gid=1794447388#gid=1794447388&range=A1" target="_blank" style="text-decoration:none">
-          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-            <i class="ti ti-file-spreadsheet" style="font-size:20px;color:var(--amber)"></i>
-            <div><div class="platform-name">Canned Responses</div><div class="platform-type">Approved Hinglish templates</div></div>
-            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
-          </div>
-        </a>
-        <a href="https://forms.gle/issrEbX24r6BLaj69" target="_blank" style="text-decoration:none">
-          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
-            <i class="ti ti-forms" style="font-size:20px;color:var(--red)"></i>
-            <div><div class="platform-name">Customer Details Form</div><div class="platform-type">Share when details are missing</div></div>
-            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
-          </div>
-        </a>
-      </div>
-    </div>
-
+    <div id="overview-video-card"></div>
+    <div id="overview-objective-card"></div>
+    <div id="overview-process-card"></div>
+    <div id="overview-tools-card"></div>
   </div>
 
   <!-- ── TICKET FLOW ── -->
@@ -812,6 +651,7 @@ Kripya humein apna order number ya registered number DM karein — hum aapki sam
       <div class="mgr-panel">
         <div class="mgr-panel-title"><i class="ti ti-layout-grid"></i>Agent view tabs</div>
         <div class="sec-list">
+          <div class="sec-item" id="msi-overview"  onclick="loadMgrTab('overview')"><i class="ti ti-home"></i>Overview</div>
           <div class="sec-item" id="msi-flow"      onclick="loadMgrTab('flow')"><i class="ti ti-list-check"></i>Ticket flow (12 steps)</div>
           <div class="sec-item" id="msi-sentiment" onclick="loadMgrTab('sentiment')"><i class="ti ti-mood-smile"></i>Response guide</div>
           <div class="sec-item" id="msi-templates" onclick="loadMgrTab('templates')"><i class="ti ti-message"></i>Templates</div>
@@ -1351,7 +1191,7 @@ function switchSec(id){
     b.classList.toggle('active',ids[i]===id);
   });
   document.querySelectorAll('.sec-panel').forEach(p=>p.classList.toggle('active',p.id==='sec-'+id));
-  if(id==='overview') renderOverviewStats();
+  if(id==='overview') renderOverviewContent();
 }
 
 /* ───── RENDER FLOW ───── */
@@ -1460,7 +1300,71 @@ function loadMgrTab(tab, silent){
   const titleEl = document.getElementById('edit-title');
   const c = getContent();
 
-  if(tab==='flow'){
+  if(tab==='overview'){
+    titleEl.textContent='Overview';
+    const ov = c.overview || {
+      videoUrl:'https://drive.google.com/file/d/1lL447cdNwL5SfZUq2ztOfD7YUzo1A666/view?usp=drive_link',
+      videoEmbed:'https://drive.google.com/file/d/1lL447cdNwL5SfZUq2ztOfD7YUzo1A666/preview',
+      videoDesc:'Watch this before you start. Covers the full ORM workflow on Konnect Insight.',
+      objective:`This SOP governs how the Wiom ORM team monitors, responds to, and resolves every customer mention, complaint, review, and direct message across all social media platforms — through a single unified dashboard called Konnect Insight.`,
+      process:[
+        {title:'Mention comes in', body:'A customer posts on Facebook, Instagram, Twitter, LinkedIn, YouTube, Google Reviews, Play Store, or sends a Gmail. Konnect Insight pulls it in automatically as a ticket.'},
+        {title:'Agent triages & categorises', body:'The agent checks sentiment (Negative / Neutral / Positive), assigns the right category (Complaint, Request, Enquiry, Feedback), and creates or links a Kapture ticket.'},
+        {title:'First response within FRT window', body:'A personalised Hinglish reply goes out publicly or via DM within the FRT target. If customer details are missing, we ask them to share privately or fill the form.'},
+        {title:'Internal resolution', body:'Agent calls the customer via Ameyo, coordinates with the internal partner/team, and tracks progress. WIOM HUB is used to look up account details. Lab App checks feasibility.'},
+        {title:'Follow-up & closure', body:'Once resolved, the agent posts the final solution on the social channel. Last reply must always be from our team. Ticket is closed with a closure note.'},
+        {title:'EOD report', body:'At shift end, the agent resets their queue in KI and shares a summary report in the Slack channel Cx_all — tickets received, resolved, escalated, and ongoing high-priority issues.'},
+      ],
+      tools:[
+        {name:'Konnect Insight (KI)', desc:'Main ORM dashboard', url:'https://cx.konnectinsights.com/'},
+        {name:'WIOM HUB', desc:'Customer account details', url:'https://hub.i2e1.in/login'},
+        {name:'Lab App', desc:'Feasibility check (lat/long)', url:'https://labs-api.wiom.in/'},
+        {name:'Ameyo Dialer', desc:'All customer & partner calls', url:'https://app13.ameyoemerge.in:7443/app/'},
+        {name:'Canned Responses', desc:'Approved Hinglish templates', url:'https://docs.google.com/spreadsheets/d/1Nub5E6_as7MdduwSYuXXy_Vydw1Qxo95dLZqxP2R1TE/edit?resourcekey=&gid=1794447388#gid=1794447388&range=A1'},
+        {name:'Customer Details Form', desc:'Share when details are missing', url:'https://forms.gle/issrEbX24r6BLaj69'},
+      ]
+    };
+    pane.innerHTML=`
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="ti ti-player-play" style="font-size:15px;color:var(--blue)"></i>Training video</div>
+      <label style="font-size:12px">Video URL (opens in new tab)</label>
+      <input type="text" id="ov-video-url" value="${esc(ov.videoUrl)}" style="font-size:13px;padding:6px 10px;margin-bottom:6px">
+      <label style="font-size:12px">Video embed URL (for preview inside tool)</label>
+      <input type="text" id="ov-video-embed" value="${esc(ov.videoEmbed)}" style="font-size:13px;padding:6px 10px;margin-bottom:6px">
+      <label style="font-size:12px">Video description</label>
+      <input type="text" id="ov-video-desc" value="${esc(ov.videoDesc)}" style="font-size:13px;padding:6px 10px;margin-bottom:14px">
+
+      <div class="divider"></div>
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="ti ti-target" style="font-size:15px;color:var(--blue)"></i>Objective text</div>
+      <textarea id="ov-objective" rows="4" style="font-size:13px;padding:8px 10px;margin-bottom:14px">${esc(ov.objective)}</textarea>
+
+      <div class="divider"></div>
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-route" style="font-size:15px;color:var(--blue)"></i>Process steps (6 steps)</div>
+      ${ov.process.map((p,i)=>`
+        <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:8px;background:var(--surface2)">
+          <label style="font-size:12px">Step ${i+1} — Title</label>
+          <input type="text" id="ov-proc-title-${i}" value="${esc(p.title)}" style="font-size:13px;padding:5px 10px;margin-bottom:5px">
+          <label style="font-size:12px">Description</label>
+          <textarea id="ov-proc-body-${i}" rows="2" style="font-size:13px;padding:5px 10px;min-height:52px">${esc(p.body)}</textarea>
+        </div>`).join('')}
+
+      <div class="divider"></div>
+      <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:10px;display:flex;align-items:center;gap:6px"><i class="ti ti-link" style="font-size:15px;color:var(--blue)"></i>Quick access tools</div>
+      ${ov.tools.map((t,i)=>`
+        <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:10px;margin-bottom:8px;background:var(--surface2)">
+          <div style="display:flex;gap:8px">
+            <div style="flex:1"><label style="font-size:12px">Tool name</label><input type="text" id="ov-tool-name-${i}" value="${esc(t.name)}" style="font-size:13px;padding:5px 10px"></div>
+            <div style="flex:1"><label style="font-size:12px">Description</label><input type="text" id="ov-tool-desc-${i}" value="${esc(t.desc)}" style="font-size:13px;padding:5px 10px"></div>
+          </div>
+          <label style="font-size:12px;margin-top:6px">URL</label>
+          <input type="text" id="ov-tool-url-${i}" value="${esc(t.url)}" style="font-size:13px;padding:5px 10px">
+        </div>`).join('')}
+
+      <div class="form-actions" style="margin-top:1rem">
+        <button class="btn btn-primary" onclick="saveOverview(${ov.process.length},${ov.tools.length})"><i class="ti ti-device-floppy"></i> Save overview</button>
+      </div>`;
+  }
+
+  else if(tab==='flow'){
     titleEl.textContent='Ticket flow — 12 steps';
     pane.innerHTML = c.steps.map((s,i)=>`
       <div style="border:0.5px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:10px;background:var(--surface2)">
@@ -1754,7 +1658,7 @@ function saveConfig(){
   renderTimerBar();
   renderMetricsTable();
   renderFlow();
-  renderOverviewStats();
+  renderOverviewContent();
   toast('SLA targets updated — agent view refreshed');
 }
 
@@ -1789,6 +1693,127 @@ function populateConfigInputs(){
 }
 
 /* ───── OVERVIEW STATS ───── */
+const PROC_COLORS=['blue','amber','red','purple','green','teal'];
+
+function renderOverviewContent(){
+  const c = getContent();
+  const ov = c.overview || {};
+  const videoUrl   = ov.videoUrl   || 'https://drive.google.com/file/d/1lL447cdNwL5SfZUq2ztOfD7YUzo1A666/view?usp=drive_link';
+  const videoEmbed = ov.videoEmbed || 'https://drive.google.com/file/d/1lL447cdNwL5SfZUq2ztOfD7YUzo1A666/preview';
+  const videoDesc  = ov.videoDesc  || 'Watch this before you start. Covers the full ORM workflow on Konnect Insight.';
+  const objective  = ov.objective  || `This SOP governs how the Wiom ORM team monitors, responds to, and resolves every customer mention, complaint, review, and direct message across all social media platforms — through a single unified dashboard called Konnect Insight.`;
+  const process = ov.process || [
+    {title:'Mention comes in', body:'A customer posts on Facebook, Instagram, Twitter, LinkedIn, YouTube, Google Reviews, Play Store, or sends a Gmail. Konnect Insight pulls it in automatically as a ticket.'},
+    {title:'Agent triages & categorises', body:'The agent checks sentiment (Negative / Neutral / Positive), assigns the right category (Complaint, Request, Enquiry, Feedback), and creates or links a Kapture ticket.'},
+    {title:'First response within FRT window', body:'A personalised Hinglish reply goes out publicly or via DM within the FRT target. If customer details are missing, we ask them to share privately or fill the form.'},
+    {title:'Internal resolution', body:'Agent calls the customer via Ameyo, coordinates with the internal partner/team, and tracks progress. WIOM HUB is used to look up account details. Lab App checks feasibility.'},
+    {title:'Follow-up & closure', body:'Once resolved, the agent posts the final solution on the social channel. Last reply must always be from our team. Ticket is closed with a closure note.'},
+    {title:'EOD report', body:'At shift end, the agent resets their queue in KI and shares a summary report in the Slack channel Cx_all — tickets received, resolved, escalated, and ongoing high-priority issues.'},
+  ];
+  const tools = ov.tools || [
+    {name:'Konnect Insight (KI)', desc:'Main ORM dashboard', url:'https://cx.konnectinsights.com/'},
+    {name:'WIOM HUB', desc:'Customer account details', url:'https://hub.i2e1.in/login'},
+    {name:'Lab App', desc:'Feasibility check (lat/long)', url:'https://labs-api.wiom.in/'},
+    {name:'Ameyo Dialer', desc:'All customer & partner calls', url:'https://app13.ameyoemerge.in:7443/app/'},
+    {name:'Canned Responses', desc:'Approved Hinglish templates', url:'https://docs.google.com/spreadsheets/d/1Nub5E6_as7MdduwSYuXXy_Vydw1Qxo95dLZqxP2R1TE/edit?resourcekey=&gid=1794447388#gid=1794447388&range=A1'},
+    {name:'Customer Details Form', desc:'Share when details are missing', url:'https://forms.gle/issrEbX24r6BLaj69'},
+  ];
+
+  const vcEl = document.getElementById('overview-video-card');
+  if(vcEl) vcEl.innerHTML=`<div class="card">
+    <div class="card-title"><i class="ti ti-player-play"></i>Process training video</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">${esc(videoDesc)}</div>
+    <div style="background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden;aspect-ratio:16/9;position:relative;">
+      <iframe src="${esc(videoEmbed)}" style="width:100%;height:100%;border:none;position:absolute;top:0;left:0" allow="autoplay" allowfullscreen></iframe>
+    </div>
+    <div style="margin-top:10px">
+      <a href="${esc(videoUrl)}" target="_blank" class="btn btn-sm"><i class="ti ti-external-link"></i> Open video in new tab</a>
+    </div>
+  </div>`;
+
+  const ocEl = document.getElementById('overview-objective-card');
+  if(ocEl) ocEl.innerHTML=`<div class="card">
+    <div class="card-title"><i class="ti ti-target"></i>What is this process about?</div>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:1rem;line-height:1.8">${esc(objective)}</p>
+    <div class="grid3" style="margin-bottom:0">
+      <div style="background:var(--red-bg);border-radius:var(--r);padding:12px 14px;border:0.5px solid var(--border)">
+        <div style="font-size:13px;font-weight:500;color:var(--red-text);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-clock" style="font-size:15px"></i>FRT goal</div>
+        <div style="font-size:22px;font-weight:500;color:var(--red-text)" id="ov-frt">–</div>
+        <div style="font-size:12px;color:var(--red-text);opacity:.8">First reply during business hours</div>
+      </div>
+      <div style="background:var(--blue-bg);border-radius:var(--r);padding:12px 14px;border:0.5px solid var(--border)">
+        <div style="font-size:13px;font-weight:500;color:var(--blue-text);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-check" style="font-size:15px"></i>TAT goal</div>
+        <div style="font-size:22px;font-weight:500;color:var(--blue-text)" id="ov-tat">–</div>
+        <div style="font-size:12px;color:var(--blue-text);opacity:.8">Full resolution turnaround</div>
+      </div>
+      <div style="background:var(--teal-bg);border-radius:var(--r);padding:12px 14px;border:0.5px solid var(--border)">
+        <div style="font-size:13px;font-weight:500;color:var(--teal-text);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-sun" style="font-size:15px"></i>Business hours</div>
+        <div style="font-size:16px;font-weight:500;color:var(--teal-text)" id="ov-hours">–</div>
+        <div style="font-size:12px;color:var(--teal-text);opacity:.8">Mon – Sun</div>
+      </div>
+    </div>
+  </div>`;
+
+  const pcEl = document.getElementById('overview-process-card');
+  if(pcEl) pcEl.innerHTML=`<div class="card">
+    <div class="card-title"><i class="ti ti-route"></i>How the process works — at a glance</div>
+    <div style="display:flex;flex-direction:column;gap:0">
+      ${process.map((p,i)=>{
+        const col=PROC_COLORS[i]||'blue';
+        const isLast=i===process.length-1;
+        return `<div style="display:flex;gap:0;align-items:${isLast?'flex-start':'stretch'}">
+          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--${col}-bg);color:var(--${col}-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">${i+1}</div>
+            ${isLast?'':'<div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>'}
+          </div>
+          <div style="padding-bottom:${isLast?4:16}px">
+            <div style="font-size:14px;font-weight:500;margin-bottom:2px">${esc(p.title)}</div>
+            <div style="font-size:13px;color:var(--text2)">${esc(p.body)}</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>`;
+
+  const tcEl = document.getElementById('overview-tools-card');
+  if(tcEl) tcEl.innerHTML=`<div class="card">
+    <div class="card-title"><i class="ti ti-link"></i>Quick access — all tools</div>
+    <div class="grid2" style="gap:8px">
+      ${tools.map(t=>`<a href="${esc(t.url)}" target="_blank" style="text-decoration:none">
+        <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+          <i class="ti ti-external-link" style="font-size:18px;color:var(--blue)"></i>
+          <div><div class="platform-name">${esc(t.name)}</div><div class="platform-type">${esc(t.desc)}</div></div>
+          <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
+        </div>
+      </a>`).join('')}
+    </div>
+  </div>`;
+
+  renderOverviewStats();
+}
+
+function saveOverview(pLen, tLen){
+  const c = getContent();
+  c.overview = {
+    videoUrl:   document.getElementById('ov-video-url')?.value   || '',
+    videoEmbed: document.getElementById('ov-video-embed')?.value || '',
+    videoDesc:  document.getElementById('ov-video-desc')?.value  || '',
+    objective:  document.getElementById('ov-objective')?.value   || '',
+    process: Array.from({length:pLen},(_,i)=>({
+      title: document.getElementById(`ov-proc-title-${i}`)?.value || '',
+      body:  document.getElementById(`ov-proc-body-${i}`)?.value  || '',
+    })),
+    tools: Array.from({length:tLen},(_,i)=>({
+      name: document.getElementById(`ov-tool-name-${i}`)?.value || '',
+      desc: document.getElementById(`ov-tool-desc-${i}`)?.value || '',
+      url:  document.getElementById(`ov-tool-url-${i}`)?.value  || '',
+    })),
+  };
+  saveContent(c);
+  renderOverviewContent();
+  toast('Overview saved');
+}
+
 function renderOverviewStats(){
   const c = loadConfig();
   const frt = document.getElementById('ov-frt');
@@ -1995,6 +2020,7 @@ document.addEventListener('click',e=>{
 
 /* ───── INIT ───── */
 getData();
+renderOverviewContent();
 renderTimerBar();
 renderMetricsTable();
 renderFlow();
