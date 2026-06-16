@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Social Media ORM SOP — Wiom</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f6f2;--surface:#fff;--surface2:#f1efe8;--surface3:#e8e6df;
+  --border:rgba(0,0,0,0.10);--border2:rgba(0,0,0,0.22);
+  --text:#1a1a18;--text2:#5f5e5a;--text3:#888780;
+  --blue:#185fa5;--blue-bg:#e6f1fb;--blue-text:#0c447c;
+  --green:#3b6d11;--green-bg:#eaf3de;--green-text:#27500a;
+  --amber:#854f0b;--amber-bg:#faeeda;--amber-text:#633806;
+  --red:#a32d2d;--red-bg:#fcebeb;--red-text:#791f1f;
+  --purple:#534ab7;--purple-bg:#eeedfe;--purple-text:#3c3489;
+  --teal:#0f6e56;--teal-bg:#e1f5ee;--teal-text:#085041;
+  --r:8px;--rl:12px
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1a;--surface:#252523;--surface2:#2c2c2a;--surface3:#333330;
+    --border:rgba(255,255,255,0.09);--border2:rgba(255,255,255,0.2);
+    --text:#edecea;--text2:#b4b2a9;--text3:#888780;
+    --blue:#378add;--blue-bg:#042c53;--blue-text:#b5d4f4;
+    --green:#c0dd97;--green-bg:#173404;--green-text:#c0dd97;
+    --amber:#fac775;--amber-bg:#412402;--amber-text:#fac775;
+    --red:#f09595;--red-bg:#501313;--red-text:#f09595;
+    --purple:#afa9ec;--purple-bg:#26215c;--purple-text:#cecbf6;
+    --teal:#5dcaa5;--teal-bg:#04342c;--teal-text:#9fe1cb
+  }
+}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.6;min-height:100vh}
+
+/* NAV */
+.topnav{background:var(--surface);border-bottom:0.5px solid var(--border);height:54px;display:flex;align-items:center;padding:0 1.25rem;gap:12px;position:sticky;top:0;z-index:200}
+.brand{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:500;margin-right:auto}
+.brand i{font-size:20px;color:var(--blue)}
+.brand span.sub{font-size:12px;color:var(--text3);font-weight:400}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{padding:6px 14px;border-radius:var(--r);border:none;background:none;cursor:pointer;font-size:13px;color:var(--text2);display:flex;align-items:center;gap:5px;transition:background .15s}
+.nav-tab:hover{background:var(--surface2);color:var(--text)}
+.nav-tab.active{background:var(--blue-bg);color:var(--blue-text);font-weight:500}
+.nav-tab i{font-size:15px}
+
+/* LAYOUT */
+.wrap{max-width:1140px;margin:0 auto;padding:1.25rem}
+#agent-view,#manager-view{display:none}
+#agent-view.active,#manager-view.active{display:block}
+
+/* SECTION TABS (agent) */
+.sec-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;border-bottom:0.5px solid var(--border);padding-bottom:10px}
+.sec-tab{padding:5px 14px;border-radius:20px;border:0.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
+.sec-tab:hover{border-color:var(--border2);color:var(--text)}
+.sec-tab.active{background:var(--blue-bg);border-color:var(--blue);color:var(--blue-text);font-weight:500}
+.sec-tab i{font-size:14px}
+.sec-panel{display:none}.sec-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.1rem 1.25rem;margin-bottom:1rem}
+.card-title{font-size:15px;font-weight:500;margin-bottom:.9rem;display:flex;align-items:center;gap:8px}
+.card-title i{font-size:17px;color:var(--blue)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+@media(max-width:680px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500}
+.b-red{background:var(--red-bg);color:var(--red-text)}
+.b-amber{background:var(--amber-bg);color:var(--amber-text)}
+.b-green{background:var(--green-bg);color:var(--green-text)}
+.b-blue{background:var(--blue-bg);color:var(--blue-text)}
+.b-purple{background:var(--purple-bg);color:var(--purple-text)}
+.b-teal{background:var(--teal-bg);color:var(--teal-text)}
+
+/* STEP LIST */
+.steps{list-style:none;display:flex;flex-direction:column;gap:8px}
+.step{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:var(--r);border:0.5px solid var(--border);background:var(--surface2);transition:border-color .15s}
+.step:hover{border-color:var(--border2)}
+.step-num{width:26px;height:26px;min-width:26px;border-radius:50%;background:var(--blue-bg);color:var(--blue-text);font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center}
+.step-body{flex:1}
+.step-title{font-size:14px;font-weight:500;margin-bottom:2px}
+.step-sub{font-size:12px;color:var(--text2);line-height:1.5}
+.step-meta{margin-top:5px;display:flex;gap:6px;flex-wrap:wrap}
+
+/* SENTIMENT CARDS */
+.sent-card{border-radius:var(--rl);padding:1rem 1.1rem;border:0.5px solid var(--border)}
+.sent-neg{background:var(--red-bg);border-color:var(--red)}
+.sent-neu{background:var(--blue-bg);border-color:var(--blue)}
+.sent-pos{background:var(--green-bg);border-color:var(--green)}
+.sent-title{font-size:14px;font-weight:500;margin-bottom:6px;display:flex;align-items:center;gap:7px}
+.sent-neg .sent-title{color:var(--red-text)}
+.sent-neu .sent-title{color:var(--blue-text)}
+.sent-pos .sent-title{color:var(--green-text)}
+.sent-body{font-size:13px;line-height:1.6}
+.sent-neg .sent-body{color:var(--red-text)}
+.sent-neu .sent-body{color:var(--blue-text)}
+.sent-pos .sent-body{color:var(--green-text)}
+
+/* TEMPLATE BOXES */
+.template-box{background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;font-size:13px;line-height:1.7;color:var(--text2);position:relative;margin-bottom:10px}
+.template-box .copy-btn{position:absolute;top:8px;right:8px;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r);padding:3px 8px;font-size:11px;cursor:pointer;color:var(--text2);display:flex;align-items:center;gap:4px}
+.template-box .copy-btn:hover{background:var(--surface3);color:var(--text)}
+.template-label{font-size:12px;font-weight:500;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em}
+
+/* TIMER */
+.timer-bar{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.timer-card{flex:1;min-width:160px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem;text-align:center}
+.timer-val{font-size:28px;font-weight:500;margin-bottom:4px}
+.timer-label{font-size:12px;color:var(--text3)}
+.frt .timer-val{color:var(--amber)}
+.tat .timer-val{color:var(--blue)}
+.reopen .timer-val{color:var(--red)}
+
+/* TABLE */
+.sop-table{width:100%;border-collapse:collapse;font-size:13px}
+.sop-table th{background:var(--surface2);color:var(--text2);font-weight:500;padding:8px 10px;text-align:left;border-bottom:0.5px solid var(--border2);font-size:12px}
+.sop-table td{padding:8px 10px;border-bottom:0.5px solid var(--border);vertical-align:top;line-height:1.5}
+.sop-table tr:last-child td{border-bottom:none}
+.sop-table tr:hover td{background:var(--surface2)}
+
+/* PLATFORM ROW */
+.platform-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);border:0.5px solid var(--border);background:var(--surface2);margin-bottom:6px}
+.platform-row i{font-size:18px;color:var(--blue)}
+.platform-name{font-size:14px;font-weight:500;flex:1}
+.platform-type{font-size:12px;color:var(--text3)}
+
+/* ESCALATION */
+.esc-card{border-radius:var(--r);padding:12px 14px;margin-bottom:8px;border:0.5px solid var(--border)}
+.esc-l1{border-left:3px solid var(--amber);background:var(--amber-bg)}
+.esc-l2{border-left:3px solid var(--red);background:var(--red-bg)}
+.esc-title{font-size:13px;font-weight:500;margin-bottom:4px}
+.esc-l1 .esc-title{color:var(--amber-text)}
+.esc-l2 .esc-title{color:var(--red-text)}
+.esc-body{font-size:12px;line-height:1.6;color:var(--text2)}
+
+/* MANAGER */
+.mgr-layout{display:grid;grid-template-columns:280px 1fr;gap:1.25rem}
+@media(max-width:720px){.mgr-layout{grid-template-columns:1fr}}
+.mgr-sidebar{display:flex;flex-direction:column;gap:10px}
+.mgr-panel{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.1rem 1.25rem}
+.mgr-panel-title{font-size:14px;font-weight:500;margin-bottom:.9rem;display:flex;align-items:center;gap:7px;color:var(--text)}
+.mgr-panel-title i{font-size:16px;color:var(--blue)}
+
+.sec-list{display:flex;flex-direction:column;gap:4px}
+.sec-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--text2);transition:all .15s;border:0.5px solid transparent}
+.sec-item:hover{background:var(--surface2);color:var(--text)}
+.sec-item.active{background:var(--blue-bg);color:var(--blue-text);border-color:var(--blue);font-weight:500}
+.sec-item i{font-size:15px}
+
+.edit-pane{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:1.25rem}
+.edit-header{display:flex;align-items:center;gap:10px;margin-bottom:1rem}
+.edit-header h2{font-size:16px;font-weight:500;flex:1}
+
+label{font-size:13px;color:var(--text2);display:block;margin-bottom:4px;margin-top:12px}
+label:first-of-type{margin-top:0}
+input[type=text],select,textarea{width:100%;padding:8px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+input[type=text]:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(24,95,165,.1)}
+textarea{resize:vertical;line-height:1.7;min-height:120px}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--r);border:0.5px solid var(--border2);background:none;color:var(--text);font-size:13px;cursor:pointer;transition:background .15s;font-family:inherit}
+.btn:hover{background:var(--surface2)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:500}
+.btn-primary:hover{opacity:.9;background:var(--blue)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.form-actions{margin-top:1rem;display:flex;gap:8px;flex-wrap:wrap}
+
+/* UPDATE LOG */
+.upd-log{margin-top:1rem;border-top:0.5px solid var(--border);padding-top:.9rem}
+.upd-log-title{font-size:12px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.upd-entry{font-size:12px;padding:6px 10px;border-radius:var(--r);background:var(--surface2);margin-bottom:5px;line-height:1.5}
+.upd-entry strong{color:var(--text2)}
+
+/* TOAST */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);border:0.5px solid var(--border2);border-radius:var(--r);padding:9px 16px;font-size:13px;font-weight:500;display:none;align-items:center;gap:8px;z-index:1100}
+#toast.show{display:flex}
+#toast.ok{color:var(--green);border-color:var(--green)}
+#toast.err{color:var(--red);border-color:var(--red)}
+
+/* AUTH OVERLAY */
+#auth-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1000;display:none;align-items:center;justify-content:center}
+#auth-overlay.open{display:flex}
+.auth-box{background:var(--surface);border-radius:var(--rl);padding:2rem;width:100%;max-width:380px;border:0.5px solid var(--border2)}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+.auth-logo i{font-size:24px;color:var(--blue)}
+.auth-logo-text{font-size:16px;font-weight:500}
+.auth-logo-sub{font-size:12px;color:var(--text3)}
+.auth-title{font-size:18px;font-weight:500;margin-bottom:4px}
+.auth-sub{font-size:13px;color:var(--text2);margin-bottom:1.25rem}
+.auth-field{margin-bottom:12px}
+.auth-field label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px}
+.auth-field input{width:100%;padding:9px 12px;border:0.5px solid var(--border2);border-radius:var(--r);background:var(--surface);color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:border-color .15s}
+.auth-field input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(24,95,165,.1)}
+.auth-field input.err{border-color:var(--red)}
+.auth-err{font-size:12px;color:var(--red);margin-top:4px;display:none}
+.auth-err.show{display:block}
+.auth-btn{width:100%;padding:10px;border-radius:var(--r);border:none;background:var(--blue);color:#fff;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;transition:opacity .15s}
+.auth-btn:hover{opacity:.9}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed}
+.auth-link{font-size:13px;color:var(--blue);cursor:pointer;background:none;border:none;font-family:inherit;padding:0;margin-top:12px;display:inline-block}
+.auth-link:hover{text-decoration:underline}
+.auth-panel{display:none}
+.auth-panel.active{display:block}
+.auth-step-badge{display:inline-flex;align-items:center;gap:6px;background:var(--blue-bg);color:var(--blue-text);font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;margin-bottom:12px}
+.auth-info-box{background:var(--surface2);border-radius:var(--r);padding:10px 12px;font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:12px;border:0.5px solid var(--border)}
+.pwd-wrap{position:relative}
+.pwd-wrap input{padding-right:38px}
+.pwd-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:17px;padding:2px}
+.pwd-toggle:hover{color:var(--text)}
+
+/* MISC */
+.divider{height:0.5px;background:var(--border);margin:1rem 0}
+.info-row{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--text2);margin-bottom:6px}
+.info-row i{font-size:15px;color:var(--text3);margin-top:1px}
+.pill-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="brand">
+    <i class="ti ti-topology-star-3" aria-hidden="true"></i>
+    <div>
+      Social Media ORM SOP
+      <div class="sub">Konnect Insight &nbsp;·&nbsp; Wiom Support</div>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="tab-agent" onclick="switchMain('agent')">
+      <i class="ti ti-headset"></i> Agent view
+    </button>
+    <button class="nav-tab" id="tab-manager" onclick="switchMain('manager')">
+      <i class="ti ti-settings"></i> Manager view
+    </button>
+    <button class="nav-tab" id="btn-logout" onclick="logoutManager()" style="display:none;color:var(--red);border:0.5px solid var(--red);margin-left:4px">
+      <i class="ti ti-logout"></i> Sign out
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════ AUTH OVERLAY ═══════════ -->
+<div id="auth-overlay" onclick="if(event.target===this)closeAuthOverlay()">
+  <div class="auth-box">
+
+    <!-- LOGO -->
+    <div class="auth-logo">
+      <i class="ti ti-lock" aria-hidden="true"></i>
+      <div>
+        <div class="auth-logo-text">Manager access</div>
+        <div class="auth-logo-sub">Social Media ORM SOP · Wiom</div>
+      </div>
+    </div>
+
+    <!-- PANEL 1: LOGIN -->
+    <div class="auth-panel active" id="ap-login">
+      <div class="auth-title">Sign in</div>
+      <div class="auth-sub">Enter your credentials to access the manager panel.</div>
+      <div class="auth-field">
+        <label>Email address</label>
+        <input type="email" id="l-email" placeholder="you@wiom.in" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <div class="pwd-wrap">
+          <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+          <button class="pwd-toggle" onclick="togglePwd('l-pass',this)" tabindex="-1"><i class="ti ti-eye"></i></button>
+        </div>
+        <div class="auth-err" id="l-err">Incorrect email or password. Please try again.</div>
+      </div>
+      <button class="auth-btn" onclick="doLogin()"><i class="ti ti-login"></i> Sign in</button>
+      <div style="text-align:center;margin-top:14px">
+        <button class="auth-link" onclick="showPanel('ap-forgot')">Forgot password?</button>
+      </div>
+    </div>
+
+    <!-- PANEL 2: FORGOT — enter email -->
+    <div class="auth-panel" id="ap-forgot">
+      <div class="auth-step-badge"><i class="ti ti-mail" style="font-size:13px"></i> Step 1 of 2 — Verify email</div>
+      <div class="auth-title">Reset password</div>
+      <div class="auth-sub">Enter your registered email address. A reset code will be sent to it.</div>
+      <div class="auth-field">
+        <label>Registered email</label>
+        <input type="email" id="r-email" placeholder="you@wiom.in" onkeydown="if(event.key==='Enter')sendResetCode()">
+        <div class="auth-err" id="r-err">Email not recognised. Contact your administrator.</div>
+      </div>
+      <button class="auth-btn" onclick="sendResetCode()"><i class="ti ti-send"></i> Send reset code</button>
+      <div style="text-align:center;margin-top:14px">
+        <button class="auth-link" onclick="showPanel('ap-login')"><i class="ti ti-arrow-left" style="font-size:12px"></i> Back to sign in</button>
+      </div>
+    </div>
+
+    <!-- PANEL 3: ENTER CODE -->
+    <div class="auth-panel" id="ap-code">
+      <div class="auth-step-badge"><i class="ti ti-device-mobile" style="font-size:13px"></i> Step 2 of 2 — Enter code</div>
+      <div class="auth-title">Check your email</div>
+      <div class="auth-info-box" id="code-info-box"></div>
+      <div class="auth-field">
+        <label>Reset code (6 digits)</label>
+        <input type="text" id="r-code" placeholder="e.g. 483921" maxlength="6" style="letter-spacing:4px;font-size:18px;text-align:center" onkeydown="if(event.key==='Enter')verifyCode()">
+        <div class="auth-err" id="c-err">Incorrect or expired code. Please try again.</div>
+      </div>
+      <button class="auth-btn" onclick="verifyCode()"><i class="ti ti-check"></i> Verify code</button>
+      <div style="text-align:center;margin-top:14px">
+        <button class="auth-link" onclick="sendResetCode()">Resend code</button>
+        &nbsp;·&nbsp;
+        <button class="auth-link" onclick="showPanel('ap-login')">Cancel</button>
+      </div>
+    </div>
+
+    <!-- PANEL 4: NEW PASSWORD -->
+    <div class="auth-panel" id="ap-newpwd">
+      <div class="auth-step-badge" style="background:var(--green-bg);color:var(--green-text)"><i class="ti ti-circle-check" style="font-size:13px"></i> Verified</div>
+      <div class="auth-title">Set new password</div>
+      <div class="auth-sub">Choose a strong password for your manager account.</div>
+      <div class="auth-field">
+        <label>New password</label>
+        <div class="pwd-wrap">
+          <input type="password" id="np-pass" placeholder="New password" onkeydown="if(event.key==='Enter')document.getElementById('np-confirm').focus()">
+          <button class="pwd-toggle" onclick="togglePwd('np-pass',this)" tabindex="-1"><i class="ti ti-eye"></i></button>
+        </div>
+      </div>
+      <div class="auth-field">
+        <label>Confirm new password</label>
+        <div class="pwd-wrap">
+          <input type="password" id="np-confirm" placeholder="Repeat password" onkeydown="if(event.key==='Enter')setNewPassword()">
+          <button class="pwd-toggle" onclick="togglePwd('np-confirm',this)" tabindex="-1"><i class="ti ti-eye"></i></button>
+        </div>
+        <div class="auth-err" id="np-err">Passwords do not match.</div>
+      </div>
+      <button class="auth-btn" onclick="setNewPassword()"><i class="ti ti-device-floppy"></i> Save new password</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ═══════════ AGENT VIEW ═══════════ -->
+<div id="agent-view" class="active">
+
+  <div class="sec-tabs">
+    <button class="sec-tab" onclick="switchSec('overview')"><i class="ti ti-home"></i>Overview</button>
+    <button class="sec-tab active" onclick="switchSec('flow')"><i class="ti ti-list-check"></i>Ticket flow</button>
+    <button class="sec-tab" onclick="switchSec('sentiment')"><i class="ti ti-mood-smile"></i>Response guide</button>
+    <button class="sec-tab" onclick="switchSec('templates')"><i class="ti ti-message"></i>Templates</button>
+    <button class="sec-tab" onclick="switchSec('moderation')"><i class="ti ti-shield-check"></i>Moderation</button>
+    <button class="sec-tab" onclick="switchSec('escalation')"><i class="ti ti-alert-triangle"></i>Escalation</button>
+    <button class="sec-tab" onclick="switchSec('platforms')"><i class="ti ti-world"></i>Platforms</button>
+    <button class="sec-tab" onclick="switchSec('shift')"><i class="ti ti-clock"></i>Shift duties</button>
+  </div>
+
+  <!-- ── OVERVIEW ── -->
+  <div class="sec-panel" id="sec-overview">
+
+    <!-- Video -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-player-play"></i>Process training video</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Watch this before you start. Covers the full ORM workflow on Konnect Insight.</div>
+      <div style="background:var(--surface2);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;">
+        <iframe
+          src="https://drive.google.com/file/d/1lL447cdNwL5SfZUq2ztOfD7YUzo1A666/preview"
+          style="width:100%;height:100%;border:none;position:absolute;top:0;left:0"
+          allow="autoplay"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div style="margin-top:10px">
+        <a href="https://drive.google.com/file/d/1lL447cdNwL5SfZUq2ztOfD7YUzo1A666/view?usp=drive_link" target="_blank" class="btn btn-sm"><i class="ti ti-external-link"></i> Open video in new tab</a>
+      </div>
+    </div>
+
+    <!-- Objective -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-target"></i>What is this process about?</div>
+      <p style="font-size:14px;color:var(--text2);margin-bottom:1rem;line-height:1.8">
+        This SOP governs how the Wiom ORM team <strong style="color:var(--text)">monitors, responds to, and resolves</strong> every customer mention, complaint, review, and direct message across all social media platforms — through a single unified dashboard called <strong style="color:var(--text)">Konnect Insight</strong>.
+      </p>
+      <div class="grid3" style="margin-bottom:0">
+        <div style="background:var(--red-bg);border-radius:var(--r);padding:12px 14px;border:0.5px solid var(--border)">
+          <div style="font-size:13px;font-weight:500;color:var(--red-text);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-clock" style="font-size:15px"></i>FRT goal</div>
+          <div style="font-size:22px;font-weight:500;color:var(--red-text)" id="ov-frt">15 min</div>
+          <div style="font-size:12px;color:var(--red-text);opacity:.8">First reply during business hours</div>
+        </div>
+        <div style="background:var(--blue-bg);border-radius:var(--r);padding:12px 14px;border:0.5px solid var(--border)">
+          <div style="font-size:13px;font-weight:500;color:var(--blue-text);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-check" style="font-size:15px"></i>TAT goal</div>
+          <div style="font-size:22px;font-weight:500;color:var(--blue-text)" id="ov-tat">48 hrs</div>
+          <div style="font-size:12px;color:var(--blue-text);opacity:.8">Full resolution turnaround</div>
+        </div>
+        <div style="background:var(--teal-bg);border-radius:var(--r);padding:12px 14px;border:0.5px solid var(--border)">
+          <div style="font-size:13px;font-weight:500;color:var(--teal-text);margin-bottom:4px;display:flex;align-items:center;gap:6px"><i class="ti ti-sun" style="font-size:15px"></i>Business hours</div>
+          <div style="font-size:16px;font-weight:500;color:var(--teal-text)" id="ov-hours">10 am – 7:30 pm</div>
+          <div style="font-size:12px;color:var(--teal-text);opacity:.8">Mon – Sun</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Process flow summary -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-route"></i>How the process works — at a glance</div>
+      <div style="display:flex;flex-direction:column;gap:0">
+
+        <div style="display:flex;gap:0;align-items:stretch">
+          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--blue-bg);color:var(--blue-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">1</div>
+            <div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>
+          </div>
+          <div style="padding-bottom:16px">
+            <div style="font-size:14px;font-weight:500;margin-bottom:2px">Mention comes in</div>
+            <div style="font-size:13px;color:var(--text2)">A customer posts on Facebook, Instagram, Twitter, LinkedIn, YouTube, Google Reviews, Play Store, or sends a Gmail. Konnect Insight pulls it in automatically as a ticket.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0;align-items:stretch">
+          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--amber-bg);color:var(--amber-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">2</div>
+            <div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>
+          </div>
+          <div style="padding-bottom:16px">
+            <div style="font-size:14px;font-weight:500;margin-bottom:2px">Agent triages &amp; categorises</div>
+            <div style="font-size:13px;color:var(--text2)">The agent checks sentiment (Negative / Neutral / Positive), assigns the right category (Complaint, Request, Enquiry, Feedback), and creates or links a Kapture ticket.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0;align-items:stretch">
+          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--red-bg);color:var(--red-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">3</div>
+            <div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>
+          </div>
+          <div style="padding-bottom:16px">
+            <div style="font-size:14px;font-weight:500;margin-bottom:2px">First response within FRT window</div>
+            <div style="font-size:13px;color:var(--text2)">A personalised Hinglish reply goes out publicly or via DM within the FRT target. If customer details are missing, we ask them to share privately or fill the form.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0;align-items:stretch">
+          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--purple-bg);color:var(--purple-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">4</div>
+            <div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>
+          </div>
+          <div style="padding-bottom:16px">
+            <div style="font-size:14px;font-weight:500;margin-bottom:2px">Internal resolution</div>
+            <div style="font-size:13px;color:var(--text2)">Agent calls the customer via Ameyo, coordinates with the internal partner/team, and tracks progress. WIOM HUB is used to look up account details. Lab App checks feasibility for installation/shifting issues.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0;align-items:stretch">
+          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--green-bg);color:var(--green-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">5</div>
+            <div style="width:2px;background:var(--border);flex:1;margin:4px 0"></div>
+          </div>
+          <div style="padding-bottom:16px">
+            <div style="font-size:14px;font-weight:500;margin-bottom:2px">Follow-up &amp; closure</div>
+            <div style="font-size:13px;color:var(--text2)">Once resolved, the agent posts the final solution on the social channel. Last reply must always be from our team. Ticket is closed with a closure note. Kapture ticket ID is logged in KI notes.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:0;align-items:flex-start">
+          <div style="display:flex;flex-direction:column;align-items:center;margin-right:14px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--teal-bg);color:var(--teal-text);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0">6</div>
+          </div>
+          <div style="padding-bottom:4px">
+            <div style="font-size:14px;font-weight:500;margin-bottom:2px">EOD report</div>
+            <div style="font-size:13px;color:var(--text2)">At shift end, the agent resets their queue in KI and shares a summary report in the Slack channel <strong style="color:var(--text)">Cx_all</strong> — tickets received, resolved, escalated, and any ongoing high-priority issues.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-link"></i>Quick access — all tools</div>
+      <div class="grid2" style="gap:8px">
+        <a href="https://cx.konnectinsights.com/" target="_blank" style="text-decoration:none">
+          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="ti ti-topology-star-3" style="font-size:20px;color:var(--blue)"></i>
+            <div><div class="platform-name">Konnect Insight (KI)</div><div class="platform-type">Main ORM dashboard</div></div>
+            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
+          </div>
+        </a>
+        <a href="https://hub.i2e1.in/login" target="_blank" style="text-decoration:none">
+          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="ti ti-database" style="font-size:20px;color:var(--purple)"></i>
+            <div><div class="platform-name">WIOM HUB</div><div class="platform-type">Customer account details</div></div>
+            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
+          </div>
+        </a>
+        <a href="https://labs-api.wiom.in/" target="_blank" style="text-decoration:none">
+          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="ti ti-map-pin" style="font-size:20px;color:var(--teal)"></i>
+            <div><div class="platform-name">Lab App</div><div class="platform-type">Feasibility check (lat/long)</div></div>
+            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
+          </div>
+        </a>
+        <a href="https://app13.ameyoemerge.in:7443/app/" target="_blank" style="text-decoration:none">
+          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="ti ti-phone-call" style="font-size:20px;color:var(--green)"></i>
+            <div><div class="platform-name">Ameyo Dialer</div><div class="platform-type">All customer &amp; partner calls</div></div>
+            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
+          </div>
+        </a>
+        <a href="https://docs.google.com/spreadsheets/d/1Nub5E6_as7MdduwSYuXXy_Vydw1Qxo95dLZqxP2R1TE/edit?resourcekey=&gid=1794447388#gid=1794447388&range=A1" target="_blank" style="text-decoration:none">
+          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="ti ti-file-spreadsheet" style="font-size:20px;color:var(--amber)"></i>
+            <div><div class="platform-name">Canned Responses</div><div class="platform-type">Approved Hinglish templates</div></div>
+            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
+          </div>
+        </a>
+        <a href="https://forms.gle/issrEbX24r6BLaj69" target="_blank" style="text-decoration:none">
+          <div class="platform-row" style="cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+            <i class="ti ti-forms" style="font-size:20px;color:var(--red)"></i>
+            <div><div class="platform-name">Customer Details Form</div><div class="platform-type">Share when details are missing</div></div>
+            <i class="ti ti-external-link" style="font-size:14px;color:var(--text3)"></i>
+          </div>
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── TICKET FLOW ── -->
+  <div class="sec-panel active" id="sec-flow">
+
+    <div class="timer-bar" id="timer-bar"></div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-list-numbers"></i>12-step ticket handling flow</div>
+      <ul class="steps" id="flow-steps"></ul>
+    </div>
+
+  </div>
+
+  <!-- ── SENTIMENT / RESPONSE ── -->
+  <div class="sec-panel" id="sec-sentiment">
+    <div class="grid3" id="sent-grid"></div>
+
+    <div class="card" style="margin-top:0">
+      <div class="card-title"><i class="ti ti-info-circle"></i>Universal reply rules</div>
+      <ul style="padding-left:1rem;font-size:14px;line-height:2;color:var(--text2)">
+        <li>Always use <strong style="color:var(--text)">Hinglish</strong> — polite, concise, never aggressive.</li>
+        <li>Personalise with the user's <strong style="color:var(--text)">name + "ji"</strong> for respect.</li>
+        <li>Never argue, never match a customer's aggressive tone.</li>
+        <li>Do <strong style="color:var(--text)">not</strong> post personal contact details publicly.</li>
+        <li>Always end with a warm sign-off: <em>"Wiom Support Team"</em>.</li>
+        <li>After every interaction, update the KI ticket status and notes.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-git-branch"></i>Complaint handling decision</div>
+      <div class="grid2">
+        <div style="border-radius:var(--r);border:0.5px solid var(--border);padding:12px 14px;background:var(--teal-bg)">
+          <div style="font-size:13px;font-weight:500;color:var(--teal-text);margin-bottom:8px;display:flex;gap:6px;align-items:center"><i class="ti ti-circle-check" style="font-size:16px"></i> Customer details available</div>
+          <ol style="padding-left:1rem;font-size:13px;color:var(--teal-text);line-height:1.9">
+            <li>Add all details (name, contact) to KI ticket.</li>
+            <li>RCA history, then call the customer via Ameyo.</li>
+            <li>Send public acknowledgement on social profile.</li>
+            <li>Send WIP email reply in Gmail inbox after the call.</li>
+            <li>Escalate immediately for safety/legal/severe reputation risk.</li>
+          </ol>
+        </div>
+        <div style="border-radius:var(--r);border:0.5px solid var(--border);padding:12px 14px;background:var(--amber-bg)">
+          <div style="font-size:13px;font-weight:500;color:var(--amber-text);margin-bottom:8px;display:flex;gap:6px;align-items:center"><i class="ti ti-help-circle" style="font-size:16px"></i> Customer details NOT available</div>
+          <ol style="padding-left:1rem;font-size:13px;color:var(--amber-text);line-height:1.9">
+            <li>Reply publicly or in DM requesting details/form filling.</li>
+            <li>Do NOT post personal contact info publicly.</li>
+            <li>If no response after final attempt → note "No contact info".</li>
+            <li>Mark ticket resolved. If details arrive later, switch to WIP workflow.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TEMPLATES ── -->
+  <div class="sec-panel" id="sec-templates">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-clock-off"></i>Off-hour auto-reply — Email</div>
+      <div class="template-label">Hindi + English · Gmail</div>
+      <div class="template-box" id="tmpl-email">
+Dear Customer,<br><br>
+Aapka message humein mil gaya hai. Chinta na karein, hamari support team ispar abhi kaam kar rahi hai. Hum 24 ghante ke andar aapse sampark karenge.<br><br>
+Yadi aapne apna registered mobile number share nahi kiya hai, kripya reply mein bhej dein. Isse aapki request aur jaldi solve ho payegi.<br><br>
+Aapke patience aur understanding ke liye dhanyavaad.<br><br>
+Warm regards,<br>
+Wiom Support Team
+        <button class="copy-btn" onclick="copyTmpl('tmpl-email')"><i class="ti ti-copy" style="font-size:12px"></i> Copy</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-brand-instagram"></i>Off-hour auto-reply — Instagram / Facebook DM</div>
+      <div class="template-label">Hindi · Social DM</div>
+      <div class="template-box" id="tmpl-social">
+Dear Customer,<br><br>
+Hum maafi chahte hain ki aapko samasya face karni padi. Yadi aapki samasya abhi tak solve nahi hui hai, toh kripya reply mein detail bhejein ya yeh form fill karein:<br>
+<strong>https://forms.gle/issrEbX24r6BLaj69</strong><br><br>
+Isse humein aapki request ko tezi se resolve karne mein madad milegi.<br><br>
+Dhanyavaad aapke dhairya ke liye.<br>
+Wiom Support Team
+        <button class="copy-btn" onclick="copyTmpl('tmpl-social')"><i class="ti ti-copy" style="font-size:12px"></i> Copy</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-message-dots"></i>Request private details (public reply)</div>
+      <div class="template-label">When customer details are missing · Hindi</div>
+      <div class="template-box" id="tmpl-pvt">
+Kripya humein apna order number ya registered number DM karein — hum aapki samasya jaldi solve kar paayenge. 🙏
+        <button class="copy-btn" onclick="copyTmpl('tmpl-pvt')"><i class="ti ti-copy" style="font-size:12px"></i> Copy</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-plus"></i>Custom quick-reply templates</div>
+      <div id="custom-templates-list"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input type="text" id="new-tmpl-label" placeholder="Label (e.g. Refund acknowledgement)" style="flex:1">
+      </div>
+      <textarea id="new-tmpl-body" rows="3" placeholder="Type your Hinglish template here…" style="margin-top:8px"></textarea>
+      <div class="form-actions">
+        <button class="btn btn-primary btn-sm" onclick="addCustomTemplate()"><i class="ti ti-plus"></i> Add template</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODERATION ── -->
+  <div class="sec-panel" id="sec-moderation">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-shield-check"></i>Comment moderation rules</div>
+      <table class="sop-table" style="margin-bottom:0">
+        <thead><tr><th>Action</th><th>When to apply</th><th>Mark in Konnect</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge b-red"><i class="ti ti-eye-off" style="font-size:11px"></i> Hide / Delete</span></td>
+            <td>Spam ads, abusive or obscene content, off-topic trolling, community standards violation.</td>
+            <td>"Invalid/Spam" or "Community Guidelines Violation"</td>
+          </tr>
+          <tr>
+            <td><span class="badge b-amber"><i class="ti ti-eye-off" style="font-size:11px"></i> Hide ONLY</span></td>
+            <td>User accidentally posts personal data (e.g. phone number). DM the user after hiding.</td>
+            <td>Tag as "Hidden" + note why</td>
+          </tr>
+          <tr>
+            <td><span class="badge b-green"><i class="ti ti-check" style="font-size:11px"></i> Do NOT Delete</span></td>
+            <td>Honest criticism or legitimate service queries. Respond per Negative Sentiment guidelines.</td>
+            <td>Respond, update status</td>
+          </tr>
+          <tr>
+            <td><span class="badge b-blue"><i class="ti ti-notes" style="font-size:11px"></i> Audit note</span></td>
+            <td>Any hidden/deleted comment — always.</td>
+            <td>Add a KI note explaining why it was removed.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-refresh"></i>Reopen rules</div>
+      <table class="sop-table">
+        <thead><tr><th>Trigger</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td>Customer replies to a closed ticket</td><td>Reopen (Konnect can auto-reopen). Address concern before re-closing.</td></tr>
+          <tr><td>Customer sends a positive / thank-you reply</td><td>Close the ticket immediately.</td></tr>
+          <tr><td>Customer shows dissatisfaction</td><td>Address the concern fully, then close. Target: within 24 hours.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-trash"></i>Irrelevant ticket identification</div>
+      <div class="pill-row" style="margin-top:0">
+        <span class="badge b-red">Spam message</span>
+        <span class="badge b-red">Non-Wiom related text</span>
+        <span class="badge b-red">Auto-generated emails</span>
+        <span class="badge b-red">Immediate reply bots</span>
+        <span class="badge b-red">Non-related photos/images</span>
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-top:10px">Mark these as <strong style="color:var(--text)">Irrelevant Ticket</strong> in Konnect and do not spend time on resolution.</div>
+    </div>
+  </div>
+
+  <!-- ── ESCALATION ── -->
+  <div class="sec-panel" id="sec-escalation">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-alert-triangle"></i>Escalation matrix</div>
+      <div class="esc-card esc-l1">
+        <div class="esc-title">L1 — Immediate Supervisor / Manager</div>
+        <div class="esc-body">
+          <strong>Triggers:</strong> FRT/TAT targets missed · Unable to collect necessary customer details · High-volume or sentiment spike.<br>
+          <strong>Action:</strong> Immediate supervisor notification + internal mail tag. Notify in Slack channel <em>Cx_all</em>.
+        </div>
+      </div>
+      <div class="esc-card esc-l2">
+        <div class="esc-title">L2 — Director / Head</div>
+        <div class="esc-body">
+          <strong>Triggers:</strong> Major brand crisis · Severe reputation risk · Legal / safety issue · System downtime impacting SLAs.<br>
+          <strong>Action:</strong> Alert L2 immediately via internal tag or email. Use subject line: <strong>"Critical"</strong>.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-flag"></i>Violated SLA — immediate steps</div>
+      <ol style="padding-left:1.2rem;font-size:14px;line-height:2;color:var(--text2)">
+        <li>Flag the ticket as <strong style="color:var(--text)">overdue</strong> in Konnect Insight.</li>
+        <li>Notify supervisor immediately — do not wait till end of shift.</li>
+        <li>Add an internal note with reason for delay.</li>
+        <li>If &gt;30 min without FRT → escalate to L1.</li>
+        <li>If &gt;48 hrs without resolution → escalate to L2 and document.</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ── PLATFORMS ── -->
+  <div class="sec-panel" id="sec-platforms">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-world"></i>Platforms &amp; monitoring methods</div>
+      <div id="platforms-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-tools"></i>Tools &amp; systems</div>
+      <table class="sop-table">
+        <thead><tr><th>Tool</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Konnect Insight (KI)</strong></td><td>Central ORM dashboard — aggregates all mentions, reviews, DMs from all scoped platforms.</td></tr>
+          <tr><td><strong>WIOM HUB</strong></td><td>Customer details — name, device ID, data usage, billing cycle, address, partner, zone, technician contact.</td></tr>
+          <tr><td><strong>Lab App</strong></td><td>Feasibility check — use lat/long to verify if area is serviceable for installation or shifting requests.</td></tr>
+          <tr><td><strong>Ameyo (Dialer)</strong></td><td>All calls to customers and partners must be made through Ameyo. Never use personal numbers.</td></tr>
+          <tr><td><strong>Canned Responses</strong></td><td>Approved Hinglish draft templates — personalise before use, never send as-is.</td></tr>
+          <tr><td><strong>Slack — Cx_all</strong></td><td>End-of-day report channel. Highlight ongoing high-priority issues.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── SHIFT DUTIES ── -->
+  <div class="sec-panel" id="sec-shift">
+    <div class="grid2">
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title"><i class="ti ti-sun"></i>Start of shift</div>
+        <ul class="steps">
+          <li class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Log into all systems</div><div class="step-sub">KI, WIOM HUB, Ameyo, Slack, Gmail</div></div></li>
+          <li class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Review overnight tickets</div><div class="step-sub">Check SLA deadlines — prioritise urgent, escalated, or aging tickets first.</div></div></li>
+          <li class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Acknowledge any missed FRTs</div><div class="step-sub">Send pending first responses before anything else.</div></div></li>
+        </ul>
+      </div>
+      <div class="card" style="margin-bottom:0">
+        <div class="card-title"><i class="ti ti-moon"></i>End of shift (7:30 pm)</div>
+        <ul class="steps">
+          <li class="step"><div class="step-num">1</div><div class="step-body"><div class="step-title">Update all open tickets</div><div class="step-sub">Ensure every open ticket has a current status and notes.</div></div></li>
+          <li class="step"><div class="step-num">2</div><div class="step-body"><div class="step-title">Reset queue</div><div class="step-sub">Use "Reset my queue" in KI to hand off to next shift.</div></div></li>
+          <li class="step"><div class="step-num">3</div><div class="step-body"><div class="step-title">Share EOD report in Slack</div><div class="step-sub">Post summary in <strong>Cx_all</strong> — tickets received / resolved / escalated + high-priority ongoing issues.</div></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:1rem">
+      <div class="card-title"><i class="ti ti-chart-bar"></i>Key metrics to track</div>
+      <table class="sop-table" id="metrics-table">
+        <thead><tr><th>Metric</th><th>Target</th><th>Notes</th></tr></thead>
+        <tbody id="metrics-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /agent-view -->
+
+<!-- ═══════════ MANAGER VIEW ═══════════ -->
+<div id="manager-view">
+  <div class="mgr-layout">
+
+    <!-- Sidebar -->
+    <div class="mgr-sidebar">
+      <div class="mgr-panel">
+        <div class="mgr-panel-title"><i class="ti ti-file-text"></i>SOP sections</div>
+        <div class="sec-list" id="mgr-sec-list"></div>
+      </div>
+      <div class="mgr-panel">
+        <div class="mgr-panel-title"><i class="ti ti-adjustments"></i>SLA targets</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Changes reflect instantly in the agent view.</div>
+        <label style="font-size:12px">FRT target</label>
+        <input type="text" id="cfg-frt" placeholder="e.g. 15 min" style="font-size:13px;padding:6px 10px">
+        <label style="font-size:12px">Resolution TAT</label>
+        <input type="text" id="cfg-tat" placeholder="e.g. 48 hrs" style="font-size:13px;padding:6px 10px">
+        <label style="font-size:12px">Reopen follow-up</label>
+        <input type="text" id="cfg-reopen" placeholder="e.g. 24 hrs" style="font-size:13px;padding:6px 10px">
+        <label style="font-size:12px">Business hours</label>
+        <input type="text" id="cfg-hours" placeholder="e.g. 10 am – 7:30 pm" style="font-size:13px;padding:6px 10px">
+        <button class="btn btn-primary" style="margin-top:10px;width:100%;justify-content:center" onclick="saveConfig()"><i class="ti ti-device-floppy"></i> Save targets</button>
+      </div>
+      <div class="mgr-panel">
+        <div class="mgr-panel-title"><i class="ti ti-key"></i>Change password</div>
+        <div class="auth-field" style="margin-bottom:8px">
+          <label style="font-size:12px">Current password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="cp-current" placeholder="Current password" style="font-size:13px;padding:6px 36px 6px 10px">
+            <button class="pwd-toggle" onclick="togglePwd('cp-current',this)" tabindex="-1"><i class="ti ti-eye"></i></button>
+          </div>
+        </div>
+        <div class="auth-field" style="margin-bottom:8px">
+          <label style="font-size:12px">New password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="cp-new" placeholder="New password" style="font-size:13px;padding:6px 36px 6px 10px">
+            <button class="pwd-toggle" onclick="togglePwd('cp-new',this)" tabindex="-1"><i class="ti ti-eye"></i></button>
+          </div>
+        </div>
+        <div class="auth-field" style="margin-bottom:10px">
+          <label style="font-size:12px">Confirm new password</label>
+          <div class="pwd-wrap">
+            <input type="password" id="cp-confirm" placeholder="Repeat new password" style="font-size:13px;padding:6px 36px 6px 10px" onkeydown="if(event.key==='Enter')changePasswordInline()">
+            <button class="pwd-toggle" onclick="togglePwd('cp-confirm',this)" tabindex="-1"><i class="ti ti-eye"></i></button>
+          </div>
+          <div class="auth-err" id="cp-err" style="margin-top:4px"></div>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center;font-size:13px" onclick="changePasswordInline()"><i class="ti ti-device-floppy"></i> Update password</button>
+      </div>
+
+      <div class="mgr-panel" style="background:var(--amber-bg);border-color:var(--amber)">
+        <div style="font-size:13px;font-weight:500;color:var(--amber-text);margin-bottom:6px;display:flex;align-items:center;gap:6px"><i class="ti ti-info-circle" style="font-size:15px"></i>SOP info</div>
+        <div style="font-size:12px;color:var(--amber-text);line-height:1.7">
+          <div><strong>Version:</strong> 1.0</div>
+          <div><strong>Prepared by:</strong> Avakash Gupta</div>
+          <div><strong>Approved by:</strong> Rashi Mehra</div>
+          <div><strong>Effective:</strong> 11-12-2025</div>
+          <div><strong>Last review:</strong> 07-06-2026</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit pane -->
+    <div class="edit-pane">
+      <div class="edit-header">
+        <i class="ti ti-edit" style="font-size:18px;color:var(--blue)"></i>
+        <h2 id="edit-title">Select a section to edit</h2>
+      </div>
+      <div id="edit-body-area">
+        <div style="text-align:center;padding:3rem 1rem;color:var(--text3)">
+          <i class="ti ti-hand-click" style="font-size:36px;display:block;margin-bottom:10px"></i>
+          <div style="font-size:14px">Choose a section from the sidebar to view and update it.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<div id="toast"><i class="ti ti-check"></i><span id="toast-msg"></span></div>
+
+<script>
+const STORAGE = 'wiom_orm_sop_v1';
+
+/* ───── DATA ───── */
+const DEFAULT_SECTIONS = [
+  {
+    id:'objective', icon:'ti-target', title:'Objective & scope',
+    content:`To proactively and reactively manage the brand's online reputation and customer interactions using Konnect Insight ORM.
+
+Key objectives:
+• Maintain FRT (First Response Time) within 30 minutes during business hours.
+• Ensure Resolution TAT within 48 hours for critical issues.
+• Drive positive sentiment and quickly neutralise negative feedback.
+
+Types of ECR (Enquiry / Complaint / Request):
+Complaints (service delays, outages), Requests (invoice, rescheduling), Enquiries (plans, speed), Feedback, Account issues, Partner escalations, App malfunctioning.`
+  },
+  {
+    id:'flow', icon:'ti-list-numbers', title:'Ticket handling flow (12 steps)',
+    content:`Step 1 — Monitor & Triage: Continuously monitor the Konnect dashboard. Priority: Negative/Urgent > Neutral > Positive. Public posts and Gmail from management are top priority.
+
+Step 2 — Categorise & Tag: Apply/verify Sentiment (Negative, Neutral, Positive). Use classification to categorise each mention.
+
+Step 3 — Kapture Ticket: Search for Kapture ticket if customer details are provided. (a) No ticket exists → create new. (b) Ticket closed incorrectly → reopen. (c) Ticket already open → update notes.
+
+Step 4 — First Response (FRT): Send initial public reply or DM within 30 minutes. Use Hinglish templates and personalise.
+
+Step 5 — Complaint Handling: If details available: call customer, coordinate with internal team. If details NOT available: request privately via DM or form.
+
+Step 6 — Resolution & Follow-up: Follow up with final solution on the social channel after internal resolution. TAT: 48 hours.
+
+Step 7 — Final Closure: Close ticket only when issue is fully solved or after final courtesy reply. Last reply on the customer comment must be from our team.
+
+Step 8 — Notes in KI: Add Kapture ticket number and creation date to KI notes section.
+
+Step 9 — Comment Moderation: Review public comments, apply hiding/deleting rules. Do NOT delete genuine criticism. Mark "Comment Hidden - Violated Policy" in KI.
+
+Step 10 — Reopen Rule: If customer replies to closed issue, reopen. Positive/thank-you reply → close. Dissatisfaction → address before closure. Target: 24 hours.
+
+Step 11 — Irrelevant Identification: Spam, non-Wiom text, auto-generated emails, non-related images → mark as Irrelevant Ticket.
+
+Step 12 — User Input in KI: Fill contact details, real name, and Kapture ticket ID in the KI ticket.`
+  },
+  {
+    id:'sentiment', icon:'ti-mood-smile', title:'Sentiment response guidelines',
+    content:`NEGATIVE (Complaint)
+Tone: Empathetic, Apologetic, Solution-oriented. Avoid defensive language.
+Issue types: Service issue, Partner complaint, App failure, etc.
+Mandatory actions: Acknowledge frustration, apologise, immediately request private details for ticket creation, assure follow-up within 24h.
+KI Action: Reply and Work in Progress.
+
+NEUTRAL (Query/Request)
+Tone: Informative, Friendly, Helpful. Concise and factual.
+Issue types: Generic comment (potential customer), plan enquiry, invoice, etc.
+Mandatory actions: Address the query directly and invite further questions.
+KI Action: Reply and Follow-up.
+
+POSITIVE (Praise/Thanks)
+Tone: Warm, Appreciative, Enthusiastic. Show gratitude.
+Issue types: Service and support-related positive feedback.
+Mandatory actions: Thank the user, reinforce the positive, encourage continued engagement.
+KI Action: Reply and Resolved.`
+  },
+  {
+    id:'frt', icon:'ti-clock', title:'FRT & TAT standards',
+    content:`FRT (First Response Time): 15 minutes internal goal. Measured only during business hours (10 am–7 pm).
+
+Resolution TAT: 48 hours. Time from ticket creation to final solution or clear status update sent to customer.
+
+Violated cases: Flag ticket as overdue immediately. Notify supervisor if >30 min without FRT or >48 hours without resolution.
+
+Reopen cases: 24-hour target. Tracks % of closed tickets reopened by customer interaction — key indicator of resolution quality.`
+  },
+  {
+    id:'moderation', icon:'ti-shield-check', title:'Comment moderation guidelines',
+    content:`General principle: Preserve transparency. Do NOT delete genuine criticism.
+
+HIDE / DELETE:
+Spam/irrelevant ads, abusive or obscene content, off-topic trolling, content violating community standards.
+Mark as "Invalid/Spam" or "Community Guidelines Violation" in Konnect.
+
+HIDE ONLY:
+If the user accidentally posts Personal Data (e.g., phone number). Hide the comment and DM the user. Tag as "Hidden".
+
+DO NOT DELETE:
+Honest criticism or legitimate service queries. Respond using Negative Sentiment guidelines.
+
+AUDIT REQUIREMENT:
+Always maintain a note in Konnect explaining why any comment was removed.`
+  },
+  {
+    id:'offhour', icon:'ti-clock-off', title:'Off-hour auto-replies',
+    content:`Must be configured for all DMs and monitored inboxes outside business hours (7 pm–10 am).
+
+EMAIL TEMPLATE:
+Dear Customer,
+Aapka message humein mil gaya hai. Chinta na karein, hamari support team ispar abhi kaam kar rahi hai. Hum 24 ghante ke andar aapse sampark karenge.
+Yadi aapne apna registered mobile number share nahi kiya hai, kripya reply mein bhej dein. Isse aapki request aur jaldi solve ho payegi.
+Aapke patience aur understanding ke liye dhanyavaad.
+Warm regards,
+Wiom Support Team
+
+INSTAGRAM/FACEBOOK DM TEMPLATE:
+Dear Customer,
+Hum maafi chahte hain ki aapko samasya face karni padi. Yadi aapki samasya abhi tak solve nahi hui hai, toh kripya reply mein detail bhejein ya yeh form fill karein: https://forms.gle/issrEbX24r6BLaj69. Isse humein aapki request ko tezi se resolve karne mein madad milegi.
+Dhanyavaad aapke dhairya ke liye.
+Wiom Support Team
+
+Goal: Instant acknowledgement + clear expectation for follow-up during business hours.`
+  },
+  {
+    id:'escalation', icon:'ti-alert-triangle', title:'Escalation matrix',
+    content:`L1 — Immediate Supervisor / Manager
+Triggers: FRT/TAT targets missed, unable to collect necessary customer details, high-volume/sentiment spike.
+Action: Immediate supervisor notification, internal mail tags.
+
+L2 — Director / Head
+Triggers: Major brand crisis, severe reputation risk, legal/safety issue, system downtime impacting SLAs.
+Action: Alert L2 immediately via internal tag or email. Use subject line: "Critical".`
+  },
+  {
+    id:'shift', icon:'ti-calendar', title:'Daily agent responsibilities',
+    content:`START OF SHIFT (10 am):
+1. Review overnight tickets and SLA deadlines.
+2. Prioritise urgent, escalated, or aging tickets first.
+
+THROUGHOUT SHIFT:
+1. Continuously monitor new mentions and respond using templates.
+2. Update tickets with notes, classification, and action after each interaction.
+3. Flag unresolved or complex issues promptly.
+
+END OF SHIFT (7:30 pm):
+1. Ensure all open tickets have updated statuses.
+2. Use "Reset my queue" to hand off to next shift.
+3. Share EOD report in Slack channel "Cx_all" — highlight ongoing high-priority issues.`
+  },
+  {
+    id:'metrics', icon:'ti-chart-bar', title:'Monitoring metrics & reporting',
+    content:`SLA PERFORMANCE:
+• FRT <= 30 minutes
+• TAT <= 48 hours
+• SLA Compliance %
+
+QUALITY & ISSUE:
+• Sentiment Ratios (Negative vs Positive)
+• Reopen rate (should be low)
+• Trending issues
+
+VOLUME & CAPACITY:
+• Volume by channel
+• Tickets handled per agent
+• Aging tickets (pending beyond X hours)
+
+MANAGEMENT REPORTING FOCUS:
+1. SLA Compliance: % of tickets meeting FRT/TAT goals. Identify systemic delays.
+2. Ticket Aging and Backlog: Open tickets by age. Focus on tickets aging over 24–48 hours.
+3. Re-open Rate: High rates indicate inadequate resolutions.
+4. Sentiment Trends: Overall sentiment shift to spot PR risks.
+5. Channel Breakdown: Compare workload across platforms.
+6. Key Incidents: Critical escalations, viral issues, documented action plans.`
+  }
+];
+
+const FLOW_STEPS = [
+  {n:1, title:'Monitor & Triage', sub:'Continuously monitor Konnect. Priority: Negative/Urgent > Neutral > Positive. Gmail from management = top priority.', status:'New / Unassigned', color:'b-red'},
+  {n:2, title:'Categorise & Tag', sub:'Apply/verify Sentiment using Konnect\'s analysis. Categorise each mention with correct classification.', status:'Open / Assigned', color:'b-amber'},
+  {n:3, title:'Kapture Ticket', sub:'Search for existing ticket. Create new if none. Reopen if incorrectly closed. Update notes if already open.', status:'Open / Assigned', color:'b-amber'},
+  {n:4, title:'First Response (FRT)', sub:'Send initial public reply or DM within 30 minutes. Use Hinglish templates — always personalise.', status:'WIP / Follow-only', color:'b-blue', highlight:true},
+  {n:5, title:'Complaint Handling', sub:'Details available: call customer, coordinate internally. Details NOT available: DM for details or share form link.', status:'Pending Info', color:'b-amber'},
+  {n:6, title:'Resolution & Follow-up', sub:'Follow up with final solution on social channel after internal resolution is complete. TAT: 48 hours.', status:'Resolved', color:'b-green'},
+  {n:7, title:'Final Closure', sub:'Close only when issue is fully solved. Last reply on customer comment must be from our team.', status:'Closed', color:'b-teal'},
+  {n:8, title:'Notes in KI', sub:'Add Kapture ticket number + date of creation in KI notes section.', status:'Notes', color:'b-purple'},
+  {n:9, title:'Comment Moderation', sub:'Review public comments. Apply hide/delete rules. Do NOT delete genuine criticism.', status:'Comment Hidden', color:'b-red'},
+  {n:10, title:'Reopen Rule', sub:'Customer replies → reopen. Thank-you reply → close. Dissatisfaction → address within 24h then close.', status:'Reopened', color:'b-amber'},
+  {n:11, title:'Irrelevant Identification', sub:'Spam, non-Wiom text, auto emails, unrelated images → mark as Irrelevant Ticket.', status:'Irrelevant', color:'b-red'},
+  {n:12, title:'User Input in KI', sub:'Fill contact details, real name, and Kapture ticket ID in the KI ticket fields.', status:'—', color:'b-blue'},
+];
+
+const PLATFORMS = [
+  {icon:'ti-brand-facebook', name:'Facebook', detail:'DMs, comments, hashtags', type:'Social Media'},
+  {icon:'ti-brand-instagram', name:'Instagram', detail:'DMs, comments, hashtags', type:'Social Media'},
+  {icon:'ti-brand-x', name:'Twitter (X)', detail:'Mentions, DMs, hashtags', type:'Social Media'},
+  {icon:'ti-brand-linkedin', name:'LinkedIn', detail:'Mentions, comments', type:'Social Media'},
+  {icon:'ti-brand-youtube', name:'YouTube', detail:'Comments, mentions', type:'Social Media'},
+  {icon:'ti-star', name:'Google Reviews', detail:'Ratings & reviews', type:'Review Platform'},
+  {icon:'ti-device-mobile', name:'Play Store', detail:'App ratings & reviews', type:'Review Platform'},
+  {icon:'ti-mail', name:'Gmail', detail:'Email integration — fetched as tickets', type:'Direct Channel'},
+];
+
+const SENTIMENTS = [
+  {cls:'sent-neg', icon:'ti-mood-sad', label:'Negative (Complaint)', tone:'Empathetic, Apologetic, Solution-oriented. Avoid defensive language.', types:'Service issue, Partner complaint, App failure', actions:'Acknowledge frustration, apologise, request private details, assure follow-up within 24h.', ki:'Reply and Work in Progress'},
+  {cls:'sent-neu', icon:'ti-mood-neutral', label:'Neutral (Query/Request)', tone:'Informative, Friendly, Helpful. Concise and factual.', types:'Generic comment, plan enquiry, invoice request', actions:'Address the query directly and invite further questions.', ki:'Reply and Follow-up'},
+  {cls:'sent-pos', icon:'ti-mood-happy', label:'Positive (Praise/Thanks)', tone:'Warm, Appreciative, Enthusiastic. Show gratitude.', types:'Service and support-related positive feedback', actions:'Thank the user, reinforce the positive, encourage continued engagement.', ki:'Reply and Resolved'},
+];
+
+/* ───── STORAGE ───── */
+function loadData(){return JSON.parse(localStorage.getItem(STORAGE)||'null')}
+function saveData(d){localStorage.setItem(STORAGE,JSON.stringify(d))}
+function getData(){
+  let d=loadData();
+  if(!d){d={sections:DEFAULT_SECTIONS.map(s=>({...s,updates:[],updatedAt:new Date().toISOString()})),customTemplates:[]};saveData(d);}
+  return d;
+}
+
+function toast(msg,type){ toast2(msg,type||'ok'); }
+
+/* ───── AUTH ───── */
+const AUTH_KEY = 'wiom_orm_auth_v1';
+const SESSION_KEY = 'wiom_orm_session';
+
+function getAuth(){
+  const def = {email:'avakash.gupta@wiom.in', passhash: simpleHash('2024')};
+  const stored = localStorage.getItem(AUTH_KEY);
+  return stored ? JSON.parse(stored) : def;
+}
+function saveAuth(obj){ localStorage.setItem(AUTH_KEY, JSON.stringify(obj)); }
+
+function simpleHash(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = ((h<<5)-h)+str.charCodeAt(i); h|=0; }
+  return h.toString(36);
+}
+
+function isLoggedIn(){ return sessionStorage.getItem(SESSION_KEY) === '1'; }
+function setSession(){ sessionStorage.setItem(SESSION_KEY,'1'); }
+function clearSession(){ sessionStorage.removeItem(SESSION_KEY); }
+
+function openAuthOverlay(){
+  document.getElementById('auth-overlay').classList.add('open');
+  showPanel('ap-login');
+  setTimeout(()=>document.getElementById('l-email').focus(),50);
+}
+function closeAuthOverlay(){ document.getElementById('auth-overlay').classList.remove('open'); }
+
+function showPanel(id){
+  document.querySelectorAll('.auth-panel').forEach(p=>p.classList.toggle('active',p.id===id));
+  document.querySelectorAll('.auth-err').forEach(e=>e.classList.remove('show'));
+}
+
+function togglePwd(inputId, btn){
+  const inp = document.getElementById(inputId);
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.querySelector('i').className = show ? 'ti ti-eye-off' : 'ti ti-eye';
+}
+
+function doLogin(){
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('l-pass').value;
+  const auth  = getAuth();
+  const err   = document.getElementById('l-err');
+  if(email === auth.email.toLowerCase() && simpleHash(pass) === auth.passhash){
+    err.classList.remove('show');
+    document.getElementById('l-pass').value = '';
+    setSession();
+    closeAuthOverlay();
+    activateManager();
+  } else {
+    err.classList.add('show');
+    document.getElementById('l-pass').classList.add('err');
+    setTimeout(()=>document.getElementById('l-pass').classList.remove('err'),1200);
+  }
+}
+
+let _resetCode = null;
+let _resetExpiry = null;
+
+function sendResetCode(){
+  const email = document.getElementById('r-email').value.trim().toLowerCase();
+  const auth  = getAuth();
+  const err   = document.getElementById('r-err');
+  if(email !== auth.email.toLowerCase()){
+    err.classList.add('show'); return;
+  }
+  err.classList.remove('show');
+  _resetCode   = String(Math.floor(100000 + Math.random() * 900000));
+  _resetExpiry = Date.now() + 10 * 60 * 1000; // 10 min
+
+  // Open mail client so the code is emailed to themselves
+  const subject = encodeURIComponent('Wiom ORM SOP — Password Reset Code');
+  const body    = encodeURIComponent(
+    'Your password reset code is:\n\n' + _resetCode +
+    '\n\nThis code expires in 10 minutes.\n\nDo not share this code with anyone.\n\n— Wiom SOP Tool'
+  );
+  window.location.href = `mailto:${auth.email}?subject=${subject}&body=${body}`;
+
+  document.getElementById('code-info-box').innerHTML =
+    `A reset code has been sent to <strong>${auth.email}</strong>. ` +
+    `Check your email (including Sent folder) and enter the 6-digit code below. ` +
+    `<span style="color:var(--amber-text);font-size:12px">Expires in 10 minutes.</span>`;
+  showPanel('ap-code');
+  setTimeout(()=>document.getElementById('r-code').focus(),50);
+}
+
+function verifyCode(){
+  const entered = document.getElementById('r-code').value.trim();
+  const err     = document.getElementById('c-err');
+  if(!_resetCode || Date.now() > _resetExpiry){
+    err.textContent = 'Code has expired. Please request a new one.';
+    err.classList.add('show'); return;
+  }
+  if(entered !== _resetCode){
+    err.textContent = 'Incorrect code. Please check your email and try again.';
+    err.classList.add('show'); return;
+  }
+  err.classList.remove('show');
+  _resetCode = null;
+  showPanel('ap-newpwd');
+  setTimeout(()=>document.getElementById('np-pass').focus(),50);
+}
+
+function setNewPassword(){
+  const p1  = document.getElementById('np-pass').value;
+  const p2  = document.getElementById('np-confirm').value;
+  const err = document.getElementById('np-err');
+  if(p1.length < 4){ err.textContent='Password must be at least 4 characters.'; err.classList.add('show'); return; }
+  if(p1 !== p2){ err.textContent='Passwords do not match.'; err.classList.add('show'); return; }
+  err.classList.remove('show');
+  const auth = getAuth();
+  auth.passhash = simpleHash(p1);
+  saveAuth(auth);
+  document.getElementById('np-pass').value='';
+  document.getElementById('np-confirm').value='';
+  closeAuthOverlay();
+  toast2('Password updated successfully. Please sign in again.','ok');
+  setTimeout(()=>openAuthOverlay(),1800);
+}
+
+function logoutManager(){
+  clearSession();
+  ['agent','manager'].forEach(t=>{
+    document.getElementById(t+'-view').classList.toggle('active',t==='agent');
+    document.getElementById('tab-'+t).classList.toggle('active',t==='agent');
+  });
+  document.getElementById('btn-logout').style.display='none';
+  toast('Signed out of manager view');
+}
+
+function activateManager(){
+  ['agent','manager'].forEach(t=>{
+    document.getElementById(t+'-view').classList.toggle('active',t==='manager');
+    document.getElementById('tab-'+t).classList.toggle('active',t==='manager');
+  });
+  document.getElementById('btn-logout').style.display='';
+  renderManager();
+  populateConfigInputs();
+}
+
+function changePasswordInline(){
+  const current  = document.getElementById('cp-current').value;
+  const newPwd   = document.getElementById('cp-new').value;
+  const confirm  = document.getElementById('cp-confirm').value;
+  const errEl    = document.getElementById('cp-err');
+  const auth     = getAuth();
+
+  if(simpleHash(current) !== auth.passhash){
+    errEl.textContent='Current password is incorrect.';
+    errEl.classList.add('show'); return;
+  }
+  if(newPwd.length < 4){
+    errEl.textContent='New password must be at least 4 characters.';
+    errEl.classList.add('show'); return;
+  }
+  if(newPwd !== confirm){
+    errEl.textContent='New passwords do not match.';
+    errEl.classList.add('show'); return;
+  }
+  errEl.classList.remove('show');
+  auth.passhash = simpleHash(newPwd);
+  saveAuth(auth);
+  document.getElementById('cp-current').value='';
+  document.getElementById('cp-new').value='';
+  document.getElementById('cp-confirm').value='';
+  toast('Password changed successfully');
+}
+
+function toast2(msg, type){
+  const el=document.getElementById('toast');
+  document.getElementById('toast-msg').textContent=msg;
+  el.className='show '+(type||'ok');
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+/* ───── MAIN TABS ───── */
+function switchMain(tab){
+  if(tab==='manager'){
+    if(!isLoggedIn()){ openAuthOverlay(); return; }
+    activateManager();
+  } else {
+    ['agent','manager'].forEach(t=>{
+      document.getElementById(t+'-view').classList.toggle('active',t===tab);
+      document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+    });
+    renderTimerBar();
+    renderMetricsTable();
+  }
+}
+
+/* ───── SECTION TABS (agent) ───── */
+function switchSec(id){
+  document.querySelectorAll('.sec-tab').forEach((b,i)=>{
+    const ids=['overview','flow','sentiment','templates','moderation','escalation','platforms','shift'];
+    b.classList.toggle('active',ids[i]===id);
+  });
+  document.querySelectorAll('.sec-panel').forEach(p=>p.classList.toggle('active',p.id==='sec-'+id));
+  if(id==='overview') renderOverviewStats();
+}
+
+/* ───── RENDER FLOW ───── */
+function renderFlow(){
+  document.getElementById('flow-steps').innerHTML = FLOW_STEPS.map(s=>`
+    <li class="step" style="${s.highlight?'border-color:var(--amber);background:var(--amber-bg)':''}">
+      <div class="step-num" style="${s.highlight?'background:var(--amber-bg);color:var(--amber-text)':''}">${s.n}</div>
+      <div class="step-body">
+        <div class="step-title" style="${s.highlight?'color:var(--amber-text)':''}">${s.title}</div>
+        <div class="step-sub">${s.sub}</div>
+        <div class="step-meta"><span class="badge ${s.color}">${s.status}</span>${s.highlight?'<span class="badge b-red">⏱ Strict 30-min target</span>':''}</div>
+      </div>
+    </li>
+  `).join('');
+}
+
+/* ───── RENDER SENTIMENT ───── */
+function renderSentiment(){
+  document.getElementById('sent-grid').innerHTML = SENTIMENTS.map(s=>`
+    <div class="sent-card ${s.cls}">
+      <div class="sent-title"><i class="ti ${s.icon}" style="font-size:17px"></i>${s.label}</div>
+      <div class="sent-body">
+        <div style="margin-bottom:5px"><strong>Tone:</strong> ${s.tone}</div>
+        <div style="margin-bottom:5px"><strong>Issue types:</strong> ${s.types}</div>
+        <div style="margin-bottom:5px"><strong>Mandatory actions:</strong> ${s.actions}</div>
+        <div><strong>KI action:</strong> ${s.ki}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ───── RENDER PLATFORMS ───── */
+function renderPlatforms(){
+  document.getElementById('platforms-list').innerHTML = PLATFORMS.map(p=>`
+    <div class="platform-row">
+      <i class="ti ${p.icon}" aria-hidden="true"></i>
+      <div class="platform-name">${p.name}</div>
+      <div class="platform-type">${p.detail}</div>
+      <span class="badge ${p.type==='Social Media'?'b-blue':p.type==='Review Platform'?'b-amber':'b-teal'}">${p.type}</span>
+    </div>
+  `).join('');
+}
+
+/* ───── CUSTOM TEMPLATES ───── */
+function renderCustomTemplates(){
+  const d=getData();
+  const el=document.getElementById('custom-templates-list');
+  if(!d.customTemplates||d.customTemplates.length===0){el.innerHTML='<div style="font-size:13px;color:var(--text3);margin-bottom:8px">No custom templates yet.</div>';return;}
+  el.innerHTML=d.customTemplates.map((t,i)=>`
+    <div class="template-label" style="margin-top:10px">${esc(t.label)}</div>
+    <div class="template-box" id="ctmpl-${i}">${esc(t.body).replace(/\n/g,'<br>')}
+      <button class="copy-btn" onclick="copyTmpl('ctmpl-${i}')"><i class="ti ti-copy" style="font-size:12px"></i> Copy</button>
+    </div>
+    <button class="btn btn-sm" style="color:var(--red);border-color:var(--red);margin-bottom:4px" onclick="deleteCustomTemplate(${i})"><i class="ti ti-trash"></i> Delete</button>
+  `).join('');
+}
+
+function addCustomTemplate(){
+  const label=document.getElementById('new-tmpl-label').value.trim();
+  const body=document.getElementById('new-tmpl-body').value.trim();
+  if(!label||!body) return;
+  const d=getData();
+  if(!d.customTemplates) d.customTemplates=[];
+  d.customTemplates.push({label,body});
+  saveData(d);
+  document.getElementById('new-tmpl-label').value='';
+  document.getElementById('new-tmpl-body').value='';
+  renderCustomTemplates();
+  toast('Template saved');
+}
+
+function deleteCustomTemplate(i){
+  const d=getData();
+  d.customTemplates.splice(i,1);
+  saveData(d);
+  renderCustomTemplates();
+  toast('Template deleted');
+}
+
+function copyTmpl(id){
+  const el=document.getElementById(id);
+  const clone=el.cloneNode(true);
+  clone.querySelectorAll('.copy-btn').forEach(b=>b.remove());
+  const text=clone.innerText||clone.textContent;
+  navigator.clipboard.writeText(text.trim()).then(()=>toast('Copied to clipboard'));
+}
+
+/* ───── MANAGER ───── */
+let activeSecId=null;
+
+function renderManager(){
+  const d=getData();
+  const list=document.getElementById('mgr-sec-list');
+  list.innerHTML=d.sections.map(s=>`
+    <div class="sec-item${activeSecId===s.id?' active':''}" onclick="loadSection('${s.id}')">
+      <i class="ti ${s.icon}"></i>${s.title}
+    </div>
+  `).join('');
+  if(activeSecId) loadSection(activeSecId,true);
+}
+
+function loadSection(id,keepFocus){
+  activeSecId=id;
+  const d=getData();
+  const sec=d.sections.find(s=>s.id===id);
+  if(!sec) return;
+
+  document.querySelectorAll('.sec-item').forEach(el=>el.classList.toggle('active',el.textContent.trim()===sec.title));
+
+  const updLog = sec.updates && sec.updates.length
+    ? `<div class="upd-log">
+        <div class="upd-log-title">Update history (${sec.updates.length})</div>
+        ${sec.updates.slice().reverse().map(u=>`<div class="upd-entry"><strong>${fmtDate(u.date)} · ${esc(u.by)}</strong><br>${esc(u.note)}</div>`).join('')}
+       </div>`
+    : '';
+
+  document.getElementById('edit-title').textContent = sec.title;
+  document.getElementById('edit-body-area').innerHTML = `
+    <label>Section content</label>
+    <textarea id="sec-content" rows="14">${esc(sec.content)}</textarea>
+
+    <div class="divider"></div>
+    <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px"><i class="ti ti-bolt" style="font-size:15px;color:var(--amber)"></i> Quick update log</div>
+    <label>What changed?</label>
+    <input type="text" id="update-note" placeholder="Describe the change briefly…">
+    <label>Updated by</label>
+    <input type="text" id="update-by" placeholder="Your name">
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="saveSection('${id}')"><i class="ti ti-device-floppy"></i> Save &amp; log update</button>
+      <button class="btn" onclick="saveSection('${id}',true)"><i class="ti ti-refresh"></i> Save only</button>
+    </div>
+    ${updLog}
+  `;
+}
+
+function saveSection(id, noLog){
+  const d=getData();
+  const idx=d.sections.findIndex(s=>s.id===id);
+  if(idx<0) return;
+  const content=document.getElementById('sec-content').value;
+  d.sections[idx].content=content;
+  d.sections[idx].updatedAt=new Date().toISOString();
+  if(!noLog){
+    const note=(document.getElementById('update-note')||{}).value||'';
+    const by=(document.getElementById('update-by')||{}).value||'Manager';
+    if(note.trim()){
+      if(!d.sections[idx].updates) d.sections[idx].updates=[];
+      d.sections[idx].updates.push({date:new Date().toISOString(),by:by.trim()||'Manager',note:note.trim()});
+    }
+  }
+  saveData(d);
+  toast('Section saved');
+  loadSection(id,true);
+  renderManager();
+}
+
+/* ───── UTILS ───── */
+function fmtDate(iso){return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+function esc(s){if(!s)return '';return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+/* ───── CONFIG (FRT / TAT / hours) ───── */
+const CONFIG_KEY = 'wiom_orm_config_v1';
+const DEFAULT_CONFIG = {frt:'15 min', tat:'48 hrs', reopen:'24 hrs', hours:'10 am – 7:30 pm'};
+
+function loadConfig(){
+  return Object.assign({}, DEFAULT_CONFIG, JSON.parse(localStorage.getItem(CONFIG_KEY)||'{}'));
+}
+function saveConfig(){
+  const cfg = {
+    frt:    document.getElementById('cfg-frt').value.trim()    || DEFAULT_CONFIG.frt,
+    tat:    document.getElementById('cfg-tat').value.trim()    || DEFAULT_CONFIG.tat,
+    reopen: document.getElementById('cfg-reopen').value.trim() || DEFAULT_CONFIG.reopen,
+    hours:  document.getElementById('cfg-hours').value.trim()  || DEFAULT_CONFIG.hours,
+  };
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+  renderTimerBar();
+  renderMetricsTable();
+  toast('SLA targets updated — agent view refreshed');
+}
+
+function renderTimerBar(){
+  const c = loadConfig();
+  document.getElementById('timer-bar').innerHTML = `
+    <div class="timer-card frt"><div class="timer-val">${esc(c.frt)}</div><div class="timer-label">First Response (FRT)</div></div>
+    <div class="timer-card tat"><div class="timer-val">${esc(c.tat)}</div><div class="timer-label">Resolution TAT</div></div>
+    <div class="timer-card reopen"><div class="timer-val">${esc(c.reopen)}</div><div class="timer-label">Reopen follow-up</div></div>
+    <div class="timer-card" style="flex:1;min-width:160px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:1rem;text-align:center">
+      <div class="timer-val" style="font-size:18px;color:var(--teal)">${esc(c.hours)}</div>
+      <div class="timer-label">Business hours</div>
+    </div>`;
+}
+
+function renderMetricsTable(){
+  const c = loadConfig();
+  document.getElementById('metrics-tbody').innerHTML = `
+    <tr><td>FRT (First Response Time)</td><td><span class="badge b-amber">≤ ${esc(c.frt)}</span></td><td>Measured during business hours only (${esc(c.hours)})</td></tr>
+    <tr><td>Resolution TAT</td><td><span class="badge b-blue">≤ ${esc(c.tat)}</span></td><td>From ticket creation to final solution / clear status update</td></tr>
+    <tr><td>Reopen rate</td><td><span class="badge b-green">As low as possible</span></td><td>High rate = inadequate first resolutions</td></tr>
+    <tr><td>Sentiment ratio</td><td><span class="badge b-green">High Positive</span></td><td>Track shift from negative to positive</td></tr>
+    <tr><td>Ticket aging</td><td><span class="badge b-red">0 beyond ${esc(c.tat)}</span></td><td>Flag and escalate any ticket aging past 24 hrs</td></tr>`;
+}
+
+function populateConfigInputs(){
+  const c = loadConfig();
+  document.getElementById('cfg-frt').value    = c.frt;
+  document.getElementById('cfg-tat').value    = c.tat;
+  document.getElementById('cfg-reopen').value = c.reopen;
+  document.getElementById('cfg-hours').value  = c.hours;
+}
+
+/* ───── OVERVIEW STATS ───── */
+function renderOverviewStats(){
+  const c = loadConfig();
+  const frt = document.getElementById('ov-frt');
+  const tat = document.getElementById('ov-tat');
+  const hrs = document.getElementById('ov-hours');
+  if(frt) frt.textContent = c.frt;
+  if(tat) tat.textContent = c.tat;
+  if(hrs) hrs.textContent = c.hours;
+}
+
+/* ───── INIT ───── */
+getData();
+renderTimerBar();
+renderMetricsTable();
+renderFlow();
+renderSentiment();
+renderPlatforms();
+renderCustomTemplates();
+</script>
+</body>
+</html>
